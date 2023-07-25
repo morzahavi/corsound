@@ -60,7 +60,7 @@ develop-eggs/
 *.toc
 
 # Compiled documents
-*.pdf
+
 *.dvi
 
 # Miscellaneous
