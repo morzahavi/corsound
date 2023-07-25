@@ -1,0 +1,357 @@
+\documentclass[hyperref={pdfpagelabels=false}, color=table]{beamer}
+\usetheme{Madrid}
+\useoutertheme[subsection=true]{miniframes}
+\usepackage{lmodern}
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{bookmark}
+%\usepackage[usenames,dvipsnames]{color}
+\usepackage{pgffor}
+\usepackage{csvsimple}
+\usepackage{colortbl}
+\usepackage[first=0,last=9]{lcg}
+\definecolor{LightCyan}{rgb}{0.88,1,1}
+\newcommand{\ra}{\rand0.\arabic{rand}}
+\usepackage{graphicx}
+\usepackage{color}
+\usetheme{Madrid}
+\title{Corsound Interview Practical Test}
+\author{Mor Zahavi}
+\date{Corsound AI}
+\begin{document}
+    \logo{\includegraphics[scale=0.14]{logo}}
+    %   \logo{\includegraphics‏[scale=0.14]{figures/logo}}
+    \begin{frame}
+        \titlepage
+    \end{frame}
+    \begin{frame}\frametitle{Table of contents}
+    \tableofcontents
+    \end{frame}
+    \section{Introduction}
+    \subsection{Motivation}
+    \begin{frame}
+
+            The goal is to fit a classifier to distinguish real speech from fake. A solution is expected to
+            be a DL model that having an audio input (waveform) outputs a score with associated
+            threshold to classify real/fake speech. As a target metric we suggest using EER (equal error
+
+
+
+
+            \end{frame}
+    \begin{frame}
+            Why is Equal Error Rate (EER) important?
+
+            EER is important in biometric systems for several reasons.
+            First, a high EER ensures that the system is able to accurately identify and verify individuals, which is critical for security and access control applications.
+            A low EER can lead to false rejections or acceptances, which can compromise the integrity of the system.
+            Second, the EER can provide insight into the usability and user experience of the biometric system.
+            A high EER indicates that the system is user-friendly and easy to use, which can encourage users to adopt and continue using the system.
+            A low EER, on the other hand, may indicate that the system is difficult to use, leading to frustration and potential abandonment.
+            Finally, the EER can also be used as a benchmark for comparing different biometric systems.
+            By comparing the EERs of different systems, organizations can determine which system is best suited for their specific needs and requirements.
+            In summary, the EER is an important metric in biometric systems that measures the accuracy, usability, and effectiveness of the system.
+            A high EER is essential for security and access control applications, while also providing insight into the user experience and facilitating system comparisons.
+
+
+
+
+            𝐸𝐸𝑅=𝐹𝐴𝑅+𝐹𝑅𝑅2
+
+    \end{frame}
+
+
+    \end{document}
+
+    \begin{frame}{Why FBprophet?}
+        \begin{itemize}
+            \item Popular package for time series analysis
+            \item It is fully automated, tunable, fast and accurate.
+            \item Provides data on most holidays and major events in many countries
+            \item Varying importance to preceding and succeeding days of event
+            \item Tuning change points sensitivity
+        \end{itemize}
+    \end{frame}
+    \section{The Model}
+    \begin{frame}
+        \begin{equation}
+            Y_{t,m} =
+            X^{\ total}_{t,m} +
+            G_{t,m} +
+            G^{\ paid}_{t,m} +
+            M_{t,m} +
+            T_{t,m}
+        \end{equation}
+        Where:
+        \footnotesize
+        \begin{itemize}
+            \item $Y_{t,m}$ is the total paid appointments in market $m$ on day $t$
+            \item $X^{\ total}_{t,m}$ is the total appointments created in market $m$ on day $t$
+            \item $G_{t,m}$ is the total Google appointments created in market $m$ on day $t$
+            \item $G^{\ paid}_{t,m}$ is the total paid Google appointments created in market $m$ on day $t$
+            \item $M^{\ cost}_{t,m}$ is the total marketing cost in market $m$ on day $t$
+            \item $T^{\ total}_{t,m}$ is the total number of technicians who claimed a paid appointment in market $m$ on day $t$
+        \end{itemize}
+    \end{frame}
+    \begin{frame}{Data}
+        \begin{itemize}
+            \item Daily data on the number of paid and unpaid appointments
+            \item Series begins on Jan 2019 (\textasciitilde 1,200 rows)
+            \item Controlling for Google appt, Google cost and number of active techs
+            \item Controlling for holidays and major events in the US\@.
+        \end{itemize}
+    \end{frame}
+
+    \section{Demo}
+    \subsection{Big Markets - DC}
+    \begin{frame}\frametitle{Data and forecast}
+    \begin{figure}\centering
+    \includegraphics[scale=.35]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_1_DC.pdf}
+    \end{figure}
+    \note{Black dots are real data, blue is confidence intervals,
+        the blue at the right hand side show future prediction.
+    }
+    \end{frame}
+    \begin{frame}\frametitle{Trend Components}
+    \begin{figure}
+        \includegraphics[scale=.25, trim={0cm 15cm 0 0cm},clip]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_2_DC}
+    \end{figure}
+    \end{frame}
+    \begin{frame}\frametitle{Data Change-points}
+    \begin{figure}
+        \includegraphics[scale=.35]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_3_DC}
+    \end{figure}
+    \end{frame}
+    \begin{frame}{Performance}
+        \begin{itemize}
+            \item Metrics (MAPE, sMAPE, rmse)
+            \item Real world application
+            \item Caveats - Market size (?)
+        \end{itemize}
+        \begin{center}
+
+            \begin{minipage}{10cm}
+                \begin{block}{MAPE}
+                    Context dependent.
+                    (Gilliland, Michael. 2010) However over 10\% is considered good, and under 20\% is risky.
+                \end{block}
+            \end{minipage}
+        \end{center}
+    \end{frame}
+    \subsection{Cross Validation}
+    \begin{frame}\frametitle{Diagnostics}
+    \begin{figure} \centering
+    \begin{tikzpicture}[
+        every node/.style={anchor=south west,inner sep=0pt},
+        x=1mm, y=1mm,]
+        \node
+        (rect) at (42,-.5) [draw,color=red,minimum width=.7cm,minimum height=4.7cm]
+            { };
+        \node (fig2) at (0,0)
+            {            \resizebox{.7\textwidth}{!}{
+            \csvautotabular{df_p_dc.csv}
+        }};
+    \end{tikzpicture}
+    \end{figure}
+    \end{frame}
+    \begin{frame}\frametitle{MAPE}
+    \begin{figure}
+        \includegraphics[scale=.2]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_4_DC}
+    \end{figure}
+    \end{frame}
+    \section{Mid Size Markets - Tampa}
+    \begin{frame}\frametitle{Other Markets}
+    \begin{figure} \centering
+    \begin{tikzpicture}[
+        every node/.style={anchor=south west,inner sep=0pt},
+        x=1mm, y=1mm,
+    ]
+        \node (fig2) at (0,0)
+            {        \includegraphics[scale=.3]{figures/markets}};
+        \node
+        (rect) at (25.2,4) [draw,color=red,minimum width=2.2cm,minimum height=1.3cm]
+            { };
+    \end{tikzpicture}
+    \end{figure}
+    \end{frame}
+    \begin{frame}\frametitle{Data and forecast}
+    \begin{figure}\centering
+    \includegraphics[scale=.35]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_1_Tampa}
+    \end{figure}
+    \note{Black dots are real data, blue is confidence intervals,
+        the blue at the right hand side show future prediction.
+    }
+    \end{frame}
+    \begin{frame}\frametitle{Trend Components}
+    \begin{figure}
+        \includegraphics[scale=.25, trim={0cm 15cm 0 0cm},clip]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_2_Tampa}
+    \end{figure}
+    \end{frame}
+    \begin{frame}\frametitle{Data Change-points}
+    \begin{figure}
+        \includegraphics[scale=.35]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_3_Tampa}
+    \end{figure}
+    \end{frame}
+    \begin{frame}\frametitle{Diagnostics}
+    \begin{figure} \centering
+    \begin{tikzpicture}[
+        every node/.style={anchor=south west,inner sep=0pt},
+        x=1mm, y=1mm,
+    ]
+        \node
+        (rect) at (42,-.5) [draw,color=red,minimum width=.7cm,minimum height=4.7cm]
+            { };
+        \node (fig2) at (0,0)
+            {            \resizebox{.7\textwidth}{!}{
+            \csvautotabular{df_p_tampa.csv}
+        }};
+    \end{tikzpicture}
+    \end{figure}
+    \end{frame}
+    \begin{frame}\frametitle{MAPE}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \centering
+        \begin{figure}
+            \includegraphics[scale=.13]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_4_Tampa}
+        \end{figure}
+        \column{0.5\textwidth}
+        \centering
+        \begin{figure}
+            \includegraphics[scale=.13]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_4_DC}
+        \end{figure}
+    \end{columns}
+    \end{frame}
+    \section{Small Markets - Denver}
+    \begin{frame}\frametitle{Denver}
+    \begin{figure} \centering
+    \begin{tikzpicture}[
+        every node/.style={anchor=south west,inner sep=0pt},
+        x=1mm, y=1mm,
+    ]
+        \node (fig2) at (0,0)
+            {        \includegraphics[scale=.3]{figures/markets}};
+        \node
+        (rect) at (25.2,4) [draw,color=red,minimum width=2.2cm,minimum height=1.3cm]
+            { };
+    \end{tikzpicture}
+    \end{figure}
+    \end{frame}
+    \begin{frame}\frametitle{Data and forecast}
+    \begin{figure}\centering
+    \includegraphics[scale=.35]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_1_Denver}
+    \end{figure}
+    \note{Black dots are real data, blue is confidence intervals,
+        the blue at the right hand side show future prediction.
+    }
+    \end{frame}
+    \begin{frame}\frametitle{Trend Components}
+    \begin{figure}
+        \includegraphics[scale=.25, trim={0cm 15cm 0 0cm},clip]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_2_Denver}
+    \end{figure}
+    \end{frame}
+    \begin{frame}\frametitle{Data Change-points}
+    \begin{figure}
+        \includegraphics[scale=.35]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_3_Denver}
+    \end{figure}
+    \end{frame}
+    \begin{frame}\frametitle{Diagnostics}
+    \begin{figure} \centering
+    \begin{tikzpicture}[
+        every node/.style={anchor=south west,inner sep=0pt},
+        x=1mm, y=1mm,
+    ]
+        \node
+        (rect) at (42,-.5) [draw,color=red,minimum width=.7cm,minimum height=4.7cm]
+            { };
+        \node (fig2) at (0,0)
+            {            \resizebox{.7\textwidth}{!}{
+            \csvautotabular{df_p_denver.csv}
+        }};
+    \end{tikzpicture}
+    \end{figure}
+    \end{frame}
+    \begin{frame}\frametitle{MAPE}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \centering
+        \begin{figure}
+            \includegraphics[scale=.13]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_4_Denver}
+        \end{figure}
+        \column{0.5\textwidth}
+        \centering
+        \begin{figure}
+            \includegraphics[scale=.13]{/Users/mz/puls/bi-models/demsup/presentation/figures/fig_4_Tampa}
+        \end{figure}
+    \end{columns}
+    \end{frame}
+    \begin{frame}{MAPE - 7 days prediction comparison}
+        \begin{itemize}
+            \item DC - 0.04
+            \item Tampa - 0.12
+            \item Denver - 0.2
+            \item Newark 0.11
+        \end{itemize}
+    \end{frame}
+
+%
+%
+    \foreach \n in {1,...,4}{
+        \begin{frame}\frametitle{Newark \n}
+        \begin{figure}\centering
+        \includegraphics[scale=.2]{fig_\n_newark.pdf}
+        \end{figure}
+        \end{frame}
+    }
+    \begin{frame}
+        \begin{figure} \centering
+        \begin{tikzpicture}[
+            every node/.style={anchor=south west,inner sep=0pt},
+            x=1mm, y=1mm,
+        ]
+            \node
+            (rect) at (42,-.5) [draw,color=red,minimum width=.7cm,minimum height=4.7cm]
+                { };
+            \node (fig2) at (0,0)
+                {            \resizebox{.7\textwidth}{!}{
+                \csvautotabular{df_p_newark.csv}
+            }};
+        \end{tikzpicture}
+        \end{figure}
+    \end{frame}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
