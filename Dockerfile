@@ -1,17 +1,20 @@
-# Python runtime base image
-FROM python:3.9
+# Use the official TensorFlow GPU base image with Ubuntu 18.04
+FROM tensorflow/tensorflow:latest-gpu
 
-# Working directory in the container
-WORKDIR /cs
+# Set the working directory inside the container
+WORKDIR /app
 
-# Copy the req.txt file into the container
-COPY req.txt .
+# Copy the entire project into the container
+COPY . .
+COPY ~/icloud/projects/corsound . /app
+COPY ~/icloud/Downloads/asvspoof . /app
+
 
 # Install project dependencies
 RUN pip install --no-cache-dir -r req.txt
 
-# Copy the rest of the project code into the container
-COPY . .
+# Set any environment variables, if needed
+# ENV MY_ENV_VARIABLE=value
 
-# Define the command to run your Python application
-CMD ["python", "your_script.py"]
+# Start your Python script (replace 'your_script.py' with your actual entry point)
+

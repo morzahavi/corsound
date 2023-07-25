@@ -1,18 +1,30 @@
 import os
-
+import argparse
+import numpy as np
 import tensorflow as tf
 from matplotlib import pyplot as plt
 from sklearn.model_selection import StratifiedKFold
 import tensorflow_io as tfio
 import csfunctions
 import pandas as pd
+from sklearn.metrics import confusion_matrix
+from scipy.optimize import brentq
+from scipy.interpolate import interp1d
 
 from csfunctions.csfunctions import load_audio, get_spec, listen_audio, plot_audio, plot_spec, write_tfrecord, \
     display_batch, get_dataset
 
+# Parser
+def get_argparser():
+    parser = argparse.ArgumentParser()
+    # Datset Options
+    parser.add_argument("--new_run", type=str,
+                        help="Whether to create the tf files. Enter 'yes' if it is the first time you run this script, and 'no' otherwise")
+    return parser
+
 #
 ##
-BASE_PATH = '/Users/morzahavi/Library/Mobile Documents/com~apple~CloudDocs/Downloads/asvspoof/LA'
+BASE_PATH = 'asvspoof/LA'
 FOLDS = 10
 SEED = 101
 DEBUG = True
@@ -94,9 +106,18 @@ for fold, (_, val_idx) in enumerate(skf.split(test_df, y=test_df['target'])):
 
 os.makedirs('/tmp/asvspoof', exist_ok=True)
 
-# write_tfrecord(train_df,split='train', show=True)
-# write_tfrecord(valid_df,split='valid', show=True)
-# write_tfrecord(test_df,split='test', show=True)
+write_tfrecord(train_df,split='train', show=True)
+write_tfrecord(valid_df,split='valid', show=True)
+write_tfrecord(test_df,split='test', show=True)
+
+# Create the tf files
+# if args.new_run.lower() == "yes":
+#     write_tfrecord(train_df,split='train', show=True)
+#     write_tfrecord(valid_df,split='valid', show=True)
+#     write_tfrecord(test_df,split='test', show=True)
+# else:
+#     pass
+
 BATCH_SIZE = 32
 AUTO = tf.data.experimental.AUTOTUNE
 TRAIN_FILENAMES = tf.io.gfile.glob('/tmp/asvspoof/train*.tfrec')
@@ -119,6 +140,38 @@ plt.close()
 
 
 
+# Calculating EER
+def calculate_eer(true_labels, predicted_probs):
+    # Convert the probabilities to scores by taking the negative log-likelihood
+    scores = -np.log(predicted_probs)
+
+    # Calculate the False Accept Rate (FAR) and False Reject Rate (FRR) at various threshold points
+    fars, frrs, thresholds = [], [], np.arange(0, 1, 0.001)
+    for threshold in thresholds:
+        predictions = (scores >= -np.log(threshold)).astype(int)
+        cm = confusion_matrix(true_labels, predictions)
+        fn = cm[1, 0]  # False Negative
+        fp = cm[0, 1]  # False Positive
+        tn = cm[0, 0]  # True Negative
+        tp = cm[1, 1]  # True Positive
+
+        far = fp / (fp + tn)  # False Accept Rate
+        frr = fn / (fn + tp)  # False Reject Rate
+
+        fars.append(far)
+        frrs.append(frr)
+
+    # Interpolate the values to find the threshold where FAR and FRR are equal (EER)
+    fars = np.asarray(fars)
+    frrs = np.asarray(frrs)
+    eer_interpolator = interp1d(fars, thresholds)
+    eer = brentq(lambda x: 1. - x - eer_interpolator(x), 0., 1.)
+
+    return eer
+
+# Usage example:
+eer = calculate_eer(test_labels, test_preds)
+print("Equal Error Rate (EER):", eer)
 
 
 

@@ -3,8 +3,6 @@ pandas
 tensorflow-probability
 librosa==0.9.1
 tensorflow
-tensorflow-macos
-tensorflow-metal
 opencv-python
 jupyterlab
 notebook
@@ -23,3 +21,4 @@ tensorflow_io==0.21.0
 tensorflow_probability==0.14.1
 tensorflow_addons==0.15.0
 audio_classification_models
+argparse

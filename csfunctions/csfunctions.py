@@ -25,7 +25,6 @@ tf.autograph.set_verbosity(0)
 import tensorflow_io as tfio
 import tensorflow_addons as tfa
 import tensorflow_probability as tfp
-import cv2
 import keras
 import tensorflow.keras.backend as K
 import sklearn
@@ -42,10 +41,11 @@ sns.set_style("whitegrid", {'axes.grid' : False})
 # Misc
 import random
 from glob import glob
+import argparse
 os.environ["WANDB_SILENT"] = "true"
 
 ##
-BASE_PATH = '/Users/morzahavi/Library/Mobile Documents/com~apple~CloudDocs/Downloads/asvspoof/LA'
+BASE_PATH = 'asvspoof/LA'
 FOLDS = 10
 SEED = 101
 DEBUG = True
