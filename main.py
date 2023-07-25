@@ -289,9 +289,7 @@ model.load_weights("/models/ckpt.h5")
 if CFG.display_plot:
     plot_history(history)
 
-
-
-# Usage example:
+#
 eer = calculate_eer(test_labels, test_preds)
 print("Equal Error Rate (EER):", eer)
 
