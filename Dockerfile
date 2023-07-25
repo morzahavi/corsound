@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Copy the entire project into the container
 COPY . .
+# Path to data directory
 COPY /asvspoof . /app
 
 
