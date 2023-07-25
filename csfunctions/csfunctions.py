@@ -222,13 +222,121 @@ def display_batch(batch, row=2, col=5):
     #         plt.yticks([])
     plt.tight_layout()
 
+##
+def get_metrics():
+    acc = tf.keras.metrics.BinaryAccuracy()
+    f1_score = tfa.metrics.F1Score(num_classes=1, threshold=0.5, average='macro')
+    precision = tf.keras.metrics.Precision()
+    recall = tf.keras.metrics.Recall()
+    return [acc, precision, recall, f1_score]
+##
+def get_lr_callback(cfg):
+    lr_start   = cfg['LR_START']
+    lr_max     = cfg['LR_MAX'] * strategy.num_replicas_in_sync
+    lr_min     = cfg['LR_MIN']
+    lr_ramp_ep = cfg['LR_RAMPUP_EPOCHS']
+    lr_sus_ep  = cfg['LR_SUSTAIN_EPOCHS']
+    lr_decay   = cfg['LR_EXP_DECAY']
 
-BATCH_SIZE = 32
-AUTO = tf.data.experimental.AUTOTUNE
-TRAIN_FILENAMES = tf.io.gfile.glob('/tmp/asvspoof/train*.tfrec')
-VALID_FILENAMES = tf.io.gfile.glob('/tmp/asvspoof/valid*.tfrec')
-TEST_FILENAMES = tf.io.gfile.glob('/tmp/asvspoof/test*.tfrec')
+    def lrfn(epoch):
+        if epoch < lr_ramp_ep:
+            lr = (lr_max - lr_start) / lr_ramp_ep * epoch + lr_start
 
+        elif epoch < lr_ramp_ep + lr_sus_ep:
+            lr = lr_max
+
+        else:
+            lr = (lr_max - lr_min) * lr_decay**(epoch - lr_ramp_ep - lr_sus_ep) + lr_min
+
+        return lr
+
+    lr_callback = tf.keras.callbacks.LearningRateScheduler(lrfn, verbose=False)
+    return lr_callback
+##
+
+def Conformer(input_shape=(128, 80, 1),num_classes=1, final_activation='sigmoid', pretrain=True):
+    """Souce Code: https://github.com/awsaf49/audio_classification_models"""
+    inp = tf.keras.layers.Input(shape=input_shape)
+    backbone = acm.ConformerEncoder()
+    out = backbone(inp)
+    if pretrain:
+        acm.utils.weights.load_pretrain(backbone, url=URL)
+    out = tf.keras.layers.GlobalAveragePooling1D()(out)
+    #     out = tf.keras.layers.Dense(32, activation='selu')(out)
+    out = tf.keras.layers.Dense(num_classes, activation=final_activation)(out)
+    model = tf.keras.models.Model(inp, out)
+    return model
+##
+def get_model(name=CFG.model_name, loss=CFG.loss,):
+    model = Conformer(input_shape=[*CFG.spec_shape,1],pretrain=True)
+    lr = CFG.lr
+    if CFG.optimizer == "Adam":
+        opt = tf.keras.optimizers.Adam(learning_rate=lr)
+    elif CFG.optimizer == "AdamW":
+        opt = tfa.optimizers.AdamW(learning_rate=lr, weight_decay=lr)
+    elif CFG.optimizer == "RectifiedAdam":
+        opt = tfa.optimizers.RectifiedAdam(learning_rate=lr)
+    else:
+        raise ValueError("Wrong Optimzer Name")
+    model.compile(
+        optimizer=opt,
+        loss=loss,
+        steps_per_execution=CFG.steps_per_execution, # to reduce idle time
+        metrics=get_metrics()
+    )
+    return model
+
+def wandb_init():
+    "initialize project on wandb"
+    id_ = wandb.util.generate_id() # generate random id
+    config = {k: v for k, v in dict(vars(CFG)).items() if "__" not in k} # convert class to dict
+    config["id"] = id_
+    run = wandb.init(
+        id=id_,
+        project="fake-speech-detection",
+        name=f"dim-{CFG.spec_shape[0]}x{CFG.spec_shape[1]}|model-{CFG.model_name}",
+        config=config,
+        anonymous=anonymous,
+        group=CFG.comment,
+        reinit=True,
+        resume="allow",
+    )
+    return run
+
+# Initialize wandb Run
+if CFG.wandb:
+    run = wandb_init()
+    WandbCallback = wandb.keras.WandbCallback(save_model=False)
+
+
+# Calculating EER
+def calculate_eer(true_labels, predicted_probs):
+    # Convert the probabilities to scores by taking the negative log-likelihood
+    scores = -np.log(predicted_probs)
+
+    # Calculate the False Accept Rate (FAR) and False Reject Rate (FRR) at various threshold points
+    fars, frrs, thresholds = [], [], np.arange(0, 1, 0.001)
+    for threshold in thresholds:
+        predictions = (scores >= -np.log(threshold)).astype(int)
+        cm = confusion_matrix(true_labels, predictions)
+        fn = cm[1, 0]  # False Negative
+        fp = cm[0, 1]  # False Positive
+        tn = cm[0, 0]  # True Negative
+        tp = cm[1, 1]  # True Positive
+
+        far = fp / (fp + tn)  # False Accept Rate
+        frr = fn / (fn + tp)  # False Reject Rate
+
+        fars.append(far)
+        frrs.append(frr)
+
+    # Interpolate the values to find the threshold where FAR and FRR are equal (EER)
+    fars = np.asarray(fars)
+    frrs = np.asarray(frrs)
+    eer_interpolator = interp1d(fars, thresholds)
+    eer = brentq(lambda x: 1. - x - eer_interpolator(x), 0., 1.)
+
+    return eer
 
 
 

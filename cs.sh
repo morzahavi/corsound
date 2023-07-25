@@ -15,7 +15,6 @@
 # Description:
 # This script will clone the git repo "corsound" into the home dir
 # Create a Docker container
-# Create a virtual environment
 # And execute the Python and LaTeX files
 
 # Notes:
