@@ -1,3 +1,4 @@
+import os
 import argparse
 import numpy as np
 import tensorflow as tf
@@ -9,6 +10,9 @@ import pandas as pd
 from sklearn.metrics import confusion_matrix
 from scipy.optimize import brentq
 from scipy.interpolate import interp1d
+
+from csfunctions.csfunctions import load_audio, get_spec, listen_audio, plot_audio, plot_spec, write_tfrecord, \
+    display_batch, get_dataset
 
 print("1")
 exit()
