@@ -49,7 +49,8 @@ cd corsound
 docker pull tensorflow/tensorflow
 docker tag tensorflow/tensorflow corsound
 docker build --no-cache . -t corsound
-docker run -it corsound /bin/bash
+docker run -it -v /Users/morzahavi/icloud/Downloads/asvspoof:/corsound corsound /bin/bash
+docker run -it -v  ubuntu /bin/bash
 #
 cd
 cd corsound
