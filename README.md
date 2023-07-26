@@ -24,7 +24,7 @@ $ docker run -it /PATH_TO_DATA:/corsound/asvspoof corsound /bin/bash
 Run this script inside the container
 ````bash
 $ cd
-$ cd app
+$ cd corsound
 $ sh install_functions.sh
 ````
 
@@ -32,8 +32,7 @@ $ sh install_functions.sh
 ### Run the main.py file
 The file should recreate the tfrecord files, and produce the images to the `images` directory
 ````bash
-$ cd
-$ cd app
+$ cd corsound
 $ python main.py
 ````
 
