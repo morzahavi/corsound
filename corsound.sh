@@ -27,21 +27,25 @@
 
 # Dependencies:
 
-
-# Examples:
-
 #--- Script starts here ---
-
+# Clone repo if not exists
 cd
-git clone https://github.com/morzahavi/corsound.git
+REPO_URL="https://github.com/morzahavi/corsound.git"
+LOCAL_DIR="repo"
+
+if [ ! -d "$LOCAL_DIR" ]; then
+    git clone "$REPO_URL" "$LOCAL_DIR"
+else
+    echo "Repository already exists. Skipping git clone."
+fi
 cd corsound
 # Pull Docker image
+docker pull tensorflow/tensorflow
+docker tag tensorflow/tensorflow corsound
+docker build . -t corsound
+docker run -it corsound /bin/bash
+#
 cd
-docker pull jupyter/tensorflow-notebook
-docker tag jupyter/tensorflow-notebook cs
-
-
-mkdir cs && cd cs
-mkdir files
-touch .dockerignore
+cd corsound
+#--- Script ends here ---
 

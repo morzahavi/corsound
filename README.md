@@ -1,9 +1,13 @@
 # Corsound
 
+## Prerequisites 
+Docker Desktop installed
 
 ## Installation
 
 Follow these steps after downloading the repo:
+
+Important: The repo should be 
 
 ### Edit the Docker file to contain the path to the database 
 ````bash
