@@ -7,7 +7,8 @@ Docker Desktop installed
 
 Follow these steps after downloading the repo:
 
-Important: The repo should be 
+Make sure you Docker desktop client has permissions to bind or mount the data libraries you want to connect to the project
+
 
 ### Edit the Docker file to contain the path to the database 
 ````bash

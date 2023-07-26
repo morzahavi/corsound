@@ -30,19 +30,25 @@
 #--- Script starts here ---
 # Clone repo if not exists
 cd
-REPO_URL="https://github.com/morzahavi/corsound.git"
-LOCAL_DIR="repo"
 
-if [ ! -d "$LOCAL_DIR" ]; then
-    git clone "$REPO_URL" "$LOCAL_DIR"
+REPO_URL="https://github.com/morzahavi/corsound.git"
+REPO_DIR="corsound"
+
+# Check if the repository directory exists
+if [ -d "$REPO_DIR" ]; then
+    # If the directory exists, perform git pull to update the repository
+    cd "$REPO_DIR"
+    git pull
 else
-    echo "Repository already exists. Skipping git clone."
+    # If the directory doesn't exist, perform git clone to clone the repository
+    git clone "$REPO_URL" "$REPO_DIR"
 fi
+
 cd corsound
 # Pull Docker image
 docker pull tensorflow/tensorflow
 docker tag tensorflow/tensorflow corsound
-docker build . -t corsound
+docker build --no-cache . -t corsound
 docker run -it corsound /bin/bash
 #
 cd
