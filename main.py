@@ -150,6 +150,9 @@ display_batch(batch, row=3, col=3)
 plt.savefig('aug_batch')
 plt.close()
 
+print("1")
+exit()
+
 import audio_classification_models as acm
 model = acm.Conformer(input_shape=(128,80,1), pretrain=True)
 ##
