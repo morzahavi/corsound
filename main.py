@@ -1025,3 +1025,7 @@ def get_model(name=CFG.model_name, loss=CFG.loss,):
     )
     return model
 
+model = get_model()
+model.summary()
+
+
