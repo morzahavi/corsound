@@ -883,7 +883,7 @@ def plot_history(history):
     plt.ylabel("Loss", size=14)
     plt.legend(loc=3)
     plt.tight_layout()
-    plt.savefig(f'{str(history)}'.png)
+    plt.savefig(f'{str(history)}.png')
     plt.close()
     return
 
@@ -901,7 +901,7 @@ def display_batch(batch, row=2, col=5):
     plt.tight_layout();
     plt.grid(False)
     plt.tight_layout()
-    plt.savefig(f'{str(batch)}'.png)
+    plt.savefig(f'{str(batch)}.png')
     plt.close()
     return
 
@@ -913,7 +913,7 @@ imgs, tars = batch
 # print(f'image_dtype: {imgs.dtype} target_dtype:{tars.dtype}')
 display_batch(batch, row=3, col=3)
 plt.tight_layout()
-plt.savefig(f'{str(batch)}'.png)
+plt.savefig(f'{str(batch)}.png')
 plt.close()
 
 ds = get_dataset(TRAIN_FILENAMES[:2], augment=True, cache=False, repeat=False).take(1)
@@ -923,6 +923,6 @@ imgs, tars = batch
 # print(f'image_dtype: {imgs.dtype} target_dtype:{tars.dtype}')
 display_batch(batch, row=3, col=3)
 plt.tight_layout()
-plt.savefig(f'{str(batch)}'.png)
+plt.savefig(f'{str(batch)}.png')
 plt.close()
 
