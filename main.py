@@ -151,7 +151,7 @@ REPLICAS = strategy.num_replicas_in_sync
 print(f'REPLICAS: {REPLICAS}')
 
 
-BASE_PATH = '/asvspoof/asvpoof-2019-dataset/LA/LA'
+BASE_PATH = '/asvspoof/LA'
 
 # Train
 train_df = pd.read_csv(f'{BASE_PATH}/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt',
