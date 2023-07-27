@@ -152,7 +152,7 @@ REPLICAS = strategy.num_replicas_in_sync
 print(f'REPLICAS: {REPLICAS}')
 
 
-BASE_PATH = '/corsound/asvpoof/LA'
+BASE_PATH = '/asvpoof/LA'
 FOLDS = 10
 SEED = 101
 DEBUG = True
