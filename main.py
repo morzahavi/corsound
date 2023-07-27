@@ -165,10 +165,14 @@ if True:
 print(f'Train Samples: {len(train_df)}')
 train_df.head(2)
 
-GCS_PATH = KaggleDatasets().get_gcs_path('asvspoof-2019-tfrecord-dataset')
-TRAIN_FILENAMES = tf.io.gfile.glob(GCS_PATH + '/asvspoof/train*.tfrec')
-VALID_FILENAMES = tf.io.gfile.glob(GCS_PATH + '/asvspoof/valid*.tfrec')
-TEST_FILENAMES = tf.io.gfile.glob(GCS_PATH + '/asvspoof/test*.tfrec')
+import re
+def count_data_items(filenames):
+    n = [int(re.compile(r"-([0-9]*)\.").search(filename).group(1)) for filename in filenames]
+    return np.sum(n)
+
+TRAIN_FILENAMES = tf.io.gfile.glob(BASE_PATH + '/asvspoof/train*.tfrec')
+VALID_FILENAMES = tf.io.gfile.glob(BASE_PATH + '/asvspoof/valid*.tfrec')
+TEST_FILENAMES = tf.io.gfile.glob(BASE_PATH + '/asvspoof/test*.tfrec')
 
 print('# NUM TRAIN: {:,}'.format(count_data_items(TRAIN_FILENAMES)))
 print('# NUM VALID: {:,}'.format(count_data_items(VALID_FILENAMES)))
