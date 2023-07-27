@@ -1006,7 +1006,7 @@ def Conformer(input_shape=(128, 80, 1),num_classes=1, final_activation='sigmoid'
     backbone = acm.ConformerEncoder()
     out = backbone(inp)
     if pretrain:
-        acm.utils.weights.load_pretrain(backbone, url=URL, fname = 'checkpoints/conformer-encoder.h5')
+        acm.utils.weights.load_pretrain(backbone, url=URL, fname = 'conformer-encoder.h5')
     out = tf.keras.layers.GlobalAveragePooling1D()(out)
     #     out = tf.keras.layers.Dense(32, activation='selu')(out)
     out = tf.keras.layers.Dense(num_classes, activation=final_activation)(out)
