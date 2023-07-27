@@ -14,7 +14,7 @@ import seaborn as sns
 sns.set_style("whitegrid", {'axes.grid' : False})
 
 import tensorflow as tf
-
+tf.config.run_functions_eagerly(True)
 import re, math
 import tensorflow_addons as tfa
 import tensorflow.keras.backend as K
