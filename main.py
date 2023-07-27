@@ -804,4 +804,117 @@ def get_dataset(
     dataset = dataset.prefetch(AUTO)
     return dataset
 
+def plot_confusion_matrix(cm,
+                          classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues,
+                          save = False):
+    """Plot Confusion Matrix"""
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    #     plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=90)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.grid(False)
+    return
+
+def plot_history(history):
+    """Plot model training history"""
+    plt.figure(figsize=(15, 5))
+    plt.plot(
+        np.arange(len(history["f1_score"])),
+        history["f1_score"],
+        "-o",
+        label="Train f1_score",
+        color="#ff7f0e",
+    )
+    plt.plot(
+        np.arange(len(history["f1_score"])),
+        history["val_f1_score"],
+        "-o",
+        label="Val f1_score",
+        color="#1f77b4",
+    )
+    x = np.argmax(history["val_f1_score"])
+    y = np.max(history["val_f1_score"])
+    xdist = plt.xlim()[1] - plt.xlim()[0]
+    ydist = plt.ylim()[1] - plt.ylim()[0]
+    plt.scatter(x, y, s=200, color="#1f77b4")
+    plt.text(x - 0.03 * xdist, y - 0.13 * ydist, "max f1_score\n%.2f" % y, size=14)
+    plt.ylabel("f1_score", size=14)
+    plt.xlabel("Epoch", size=14)
+    plt.legend(loc=2)
+    plt2 = plt.gca().twinx()
+    plt2.plot(
+        np.arange(len(history["f1_score"])),
+        history["loss"],
+        "-o",
+        label="Train Loss",
+        color="#2ca02c",
+    )
+    plt2.plot(
+        np.arange(len(history["f1_score"])),
+        history["val_loss"],
+        "-o",
+        label="Val Loss",
+        color="#d62728",
+    )
+    x = np.argmin(history["val_loss"])
+    y = np.min(history["val_loss"])
+    ydist = plt.ylim()[1] - plt.ylim()[0]
+    plt.scatter(x, y, s=200, color="#d62728")
+    plt.text(x - 0.03 * xdist, y + 0.05 * ydist, "min loss", size=14)
+    plt.ylabel("Loss", size=14)
+    plt.legend(loc=3)
+    plt.savefig(f"history_plot.png")
+    plt.show()
+    return
+
+def display_batch(batch, row=2, col=5):
+    "Plot one batch data"
+    imgs, tars = batch
+    plt.figure(figsize=(5.0*col, 3.5*row))
+    for idx in range(row*col):
+        img = imgs[idx].numpy().transpose()[0]
+        tar = tars[idx].numpy()
+        plt.subplot(row, col, idx+1)
+        plt.imshow(img, cmap='coolwarm')
+        text = 'Fake' if tar else 'Real'
+        plt.title(text, fontsize=15, color=('red' if tar else 'green'))
+    plt.tight_layout();
+    plt.grid(False)
+    plt.show();
+    return
+
+
+ds = get_dataset(TRAIN_FILENAMES[:2], augment=False, cache=False, repeat=False).take(1)
+batch = next(iter(ds.unbatch().batch(20)))
+imgs, tars = batch
+print(f'image_shape: {imgs.shape} target_shape:{tars.shape}')
+print(f'image_dtype: {imgs.dtype} target_dtype:{tars.dtype}')
+display_batch(batch, row=3, col=3)
+
+ds = get_dataset(TRAIN_FILENAMES[:2], augment=True, cache=False, repeat=False).take(1)
+batch = next(iter(ds.unbatch().batch(20)))
+imgs, tars = batch
+print(f'image_shape: {imgs.shape} target_shape:{tars.shape}')
+print(f'image_dtype: {imgs.dtype} target_dtype:{tars.dtype}')
+display_batch(batch, row=3, col=3)
+
 
