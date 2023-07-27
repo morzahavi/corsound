@@ -1,8 +1,10 @@
+import librosa.display
+import warnings
+warnings.filterwarnings("ignore")
 import pandas as pd
 import numpy as np
 import random
 import os
-import shutil
 import librosa
 import librosa.display
 
@@ -13,7 +15,7 @@ sns.set_style("whitegrid", {'axes.grid' : False})
 
 import tensorflow as tf
 
-import tensorflow as tf, re, math
+import re, math
 import tensorflow_addons as tfa
 import tensorflow.keras.backend as K
 import tensorflow_io as tfio
@@ -152,7 +154,7 @@ REPLICAS = strategy.num_replicas_in_sync
 print(f'REPLICAS: {REPLICAS}')
 
 
-BASE_PATH = '/asvpoof/LA'
+BASE_PATH = '/corsound/asvpoof/LA'
 FOLDS = 10
 SEED = 101
 DEBUG = True
