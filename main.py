@@ -278,8 +278,8 @@ audio, sr= load_audio(row.filepath, sr=None)
 audio = audio[:AUDIO_LEN]
 spec = get_spec(audio)
 
-print('# Listen')
-listen_audio(audio, sr=16000)
+# print('# Listen')
+# listen_audio(audio, sr=16000)
 
 print("# Plot\n")
 plt.figure(figsize=(12*2,5))
