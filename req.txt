@@ -2,7 +2,12 @@
 torch
 torchvision
 torchaudio
-cv2
+opencv-python
+rasterio
+folium
+ee
+kaggle_secrets
+google.oauth2.credentials
 ###### Requirements without Version Specifiers ######
 numpy
 pandas

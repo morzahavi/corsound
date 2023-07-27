@@ -427,7 +427,7 @@ import wandb
 class CFG:
     wandb = True
     project = "fake-speech-detection"
-    debug = False
+    debug = True,
     exp_name = "v0"
     comment = "Conformer-128x80-cosine-no_aug-no_fc"
 
