@@ -227,8 +227,8 @@ def plot_audio(audio, sr=16000):
                                    sr=sr)
     return fig
 
-def listen_audio(audio, sr=16000):
-    display(ipd.Audio(audio, rate=sr))
+# def listen_audio(audio, sr=16000):
+#     display(ipd.Audio(audio, rate=sr))
 
 def get_spec(audio):
     spec = librosa.feature.melspectrogram(audio, fmax=FMAX, n_mels=N_MELS, hop_length=HOP_LEN, n_fft=N_FFT)
