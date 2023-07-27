@@ -209,6 +209,90 @@ if DEBUG:
 print(f'Test Samples: {len(test_df)}')
 test_df.head(2)
 
+
+def load_audio(path, sr=16000):
+    """load audio from .wav file
+    Args:
+        path: file path of .wav file
+        sr: sample rate
+    Returns:
+        audio, sr
+    """
+    audio, sr = librosa.load(path, sr=sr)
+    return audio, sr
+
+def plot_audio(audio, sr=16000):
+    fig = librosa.display.waveshow(audio,
+                                   x_axis='time',
+                                   sr=sr)
+    return fig
+
+def listen_audio(audio, sr=16000):
+    display(ipd.Audio(audio, rate=sr))
+
+def get_spec(audio):
+    spec = librosa.feature.melspectrogram(audio, fmax=FMAX, n_mels=N_MELS, hop_length=HOP_LEN, n_fft=N_FFT)
+    spec = librosa.power_to_db(spec)
+    return spec
+
+def plot_spec(spec, sr=16000):
+    fig = librosa.display.specshow(spec,
+                                   x_axis='time',
+                                   y_axis='hz',
+                                   hop_length=HOP_LEN,
+                                   sr=SAMPLE_RATE,
+                                   fmax=FMAX,)
+    return fig
+
+
+row = train_df[train_df.target==0].iloc[10]
+print(f'> Filename: {row.filename} | Label: {row.class_name}')
+audio, sr= load_audio(row.filepath, sr=None)
+audio = audio[:AUDIO_LEN]
+spec = get_spec(audio)
+
+print('# Listen')
+listen_audio(audio, sr=16000)
+
+print("# Plot\n")
+plt.figure(figsize=(12*2,5))
+
+plt.subplot(121)
+plot_audio(audio)
+plt.title("Waveform",fontsize=17)
+
+plt.subplot(122)
+plot_spec(spec);
+plt.title("Spectrogram",fontsize=17)
+
+plt.tight_layout()
+plt.show()
+
+
+row = train_df[train_df.target==1].iloc[10]
+print(f'Filename: {row.filename} | Label: {row.class_name}')
+audio, sr= load_audio(row.filepath, sr=None)
+audio = audio[:AUDIO_LEN]
+spec = get_spec(audio)
+
+print('# Listen')
+listen_audio(audio, sr=16000)
+
+print("# Plot\n")
+plt.figure(figsize=(12*2,5))
+
+plt.subplot(121)
+plot_audio(audio)
+plt.title("Waveform",fontsize=17)
+
+plt.subplot(122)
+plot_spec(spec);
+plt.title("Spectrogram",fontsize=17)
+
+plt.tight_layout()
+plt.show()
+
+
 from sklearn.model_selection import StratifiedKFold
 skf = StratifiedKFold(n_splits=FOLDS, shuffle=True, random_state=SEED)
 # Split valid data into folds
@@ -258,40 +342,6 @@ def train_serialize_example(feature0, feature1, feature2,
     return example_proto.SerializeToString()
 
 
-
-def load_audio(path, sr=16000):
-    """load audio from .wav file
-    Args:
-        path: file path of .wav file
-        sr: sample rate
-    Returns:
-        audio, sr
-    """
-    audio, sr = librosa.load(path, sr=sr)
-    return audio, sr
-
-def plot_audio(audio, sr=16000):
-    fig = librosa.display.waveshow(audio,
-                                   x_axis='time',
-                                   sr=sr)
-    return fig
-
-def listen_audio(audio, sr=16000):
-    display(ipd.Audio(audio, rate=sr))
-
-def get_spec(audio):
-    spec = librosa.feature.melspectrogram(audio, fmax=FMAX, n_mels=N_MELS, hop_length=HOP_LEN, n_fft=N_FFT)
-    spec = librosa.power_to_db(spec)
-    return spec
-
-def plot_spec(spec, sr=16000):
-    fig = librosa.display.specshow(spec,
-                                   x_axis='time',
-                                   y_axis='hz',
-                                   hop_length=HOP_LEN,
-                                   sr=SAMPLE_RATE,
-                                   fmax=FMAX,)
-    return fig
 
 
 
