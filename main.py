@@ -372,3 +372,303 @@ print('There are %i train, %i valid & %i test images'%(count_data_items(TRAIN_FI
                                                        count_data_items(VALID_FILENAMES),
                                                        count_data_items(TEST_FILENAMES)))
 
+###### Model ########################################################################
+import pandas as pd
+import numpy as np
+import random
+import os
+import shutil
+
+import cv2
+import matplotlib.pyplot as plt
+plt.rcParams["font.family"] = 'DejaVu Sans'
+import seaborn as sns
+sns.set_style("whitegrid", {'axes.grid' : False})
+
+import tensorflow as tf, re, math
+import tensorflow_addons as tfa
+import tensorflow.keras.backend as K
+import tensorflow_io as tfio
+import tensorflow_addons as tfa
+import tensorflow_probability as tfp
+
+import yaml
+from IPython import display as ipd
+import json
+from datetime import datetime
+
+from glob import glob
+from tqdm.notebook import tqdm
+from kaggle_datasets import KaggleDatasets
+import sklearn
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
+from sklearn.model_selection import KFold
+from sklearn.metrics import roc_auc_score
+from IPython import display as ipd
+
+import itertools
+import scipy
+import warnings
+
+# Show less log messages
+tf.get_logger().setLevel('ERROR')
+tf.autograph.set_verbosity(0)
+
+# Set true to show less logging messages
+os.environ["WANDB_SILENT"] = "true"
+import wandb
+
+class CFG:
+    wandb = True
+    project = "fake-speech-detection"
+    debug = False
+    exp_name = "v0"
+    comment = "Conformer-128x80-cosine-no_aug-no_fc"
+
+    # Use verbose=0 for silent, 1 for interactive
+    verbose = 0
+    display_plot = True
+
+    # Device for training
+    device = None  # device is automatically selected
+
+    # Model & Backbone
+    model_name = "Conformer"
+
+    # Seeding for reproducibility
+    seed = 101
+
+    # Audio params
+    sample_rate = 16000
+    duration = 3.5 # duration in second
+    audio_len = int(sample_rate * duration)
+    normalize = True
+
+    # Spectrogram params
+    spec_freq = 128 # freq axis
+    n_fft = 2048
+    spec_time = 256 # time axis
+    hop_len = audio_len//(spec_time - 1) # non-overlap region
+    fmin = 20
+    fmax = sample_rate//2 # max frequency
+    spec_shape = [spec_time, spec_freq] # output spectrogram shape
+
+    # Audio Augmentation
+    timeshift_prob = 0.0
+    gn_prob = 0.0
+
+    # Spectrogram Augmentation
+    time_mask = 20
+    freq_mask = 10
+    cutmix_prob = 0.0
+    cutmix_alpha = 2.5
+    mixup_prob = 0.0
+    mixup_alpha = 2.5
+
+    # Batch Size & Epochs
+    batch_size = 32
+    drop_remainder = False
+    epochs = 12
+    steps_per_execution = None
+
+    # Loss & Optimizer & LR Scheduler
+    loss = "binary_crossentropy"
+    optimizer = "Adam"
+    lr = 1e-4
+    lr_schedule = "cosine"
+
+    # Augmentation
+    augment = False
+
+    # Clip values to [0, 1]
+    clip = False
+
+
+def seeding(SEED):
+    """
+    Sets all random seeds for the program (Python, NumPy, and TensorFlow).
+    """
+    np.random.seed(SEED)
+    random.seed(SEED)
+    os.environ["PYTHONHASHSEED"] = str(SEED)
+    #     os.environ["TF_CUDNN_DETERMINISTIC"] = str(SEED)
+    tf.random.set_seed(SEED)
+    print("seeding done!!!")
+
+
+seeding(CFG.seed)
+
+def configure_device():
+    try:
+        tpu = tf.distribute.cluster_resolver.TPUClusterResolver.connect()  # connect to tpu cluster
+        strategy = tf.distribute.TPUStrategy(tpu) # get strategy for tpu
+        print('> Running on TPU ', tpu.master(), end=' | ')
+        print('Num of TPUs: ', strategy.num_replicas_in_sync)
+        device='TPU'
+    except: # otherwise detect GPUs
+        tpu = None
+        gpus = tf.config.list_logical_devices('GPU') # get logical gpus
+        ngpu = len(gpus)
+        if ngpu: # if number of GPUs are 0 then CPU
+            strategy = tf.distribute.MirroredStrategy(gpus) # single-GPU or multi-GPU
+            print("> Running on GPU", end=' | ')
+            print("Num of GPUs: ", ngpu)
+            device='GPU'
+        else:
+            print("> Running on CPU")
+            strategy = tf.distribute.get_strategy() # connect to single gpu or cpu
+            device='CPU'
+    return strategy, device, tpu
+
+strategy, CFG.device, tpu = configure_device()
+AUTO = tf.data.experimental.AUTOTUNE
+REPLICAS = strategy.num_replicas_in_sync
+print(f'REPLICAS: {REPLICAS}')
+
+def random_int(shape=[], minval=0, maxval=1):
+    return tf.random.uniform(shape=shape, minval=minval, maxval=maxval, dtype=tf.int32)
+
+
+def random_float(shape=[], minval=0.0, maxval=1.0):
+    rnd = tf.random.uniform(shape=shape, minval=minval, maxval=maxval, dtype=tf.float32)
+    return rnd
+
+# Trim Audio to ignore silent part in the start and end
+def TrimAudio(audio, epsilon=0.15):
+    pos  = tfio.audio.trim(audio, axis=0, epsilon=epsilon)
+    audio = audio[pos[0]:pos[1]]
+    return audio
+
+# Crop or Pad audio to keep a fixed length
+def CropOrPad(audio, target_len, pad_mode='constant'):
+    audio_len = tf.shape(audio)[0]
+    if audio_len < target_len: # if audio_len is smaller than target_len then use Padding
+        diff_len = (target_len - audio_len)
+        pad1 = random_int([], minval=0, maxval=diff_len) # select random location for padding
+        pad2 = diff_len - pad1
+        pad_len = [pad1, pad2]
+        audio = tf.pad(audio, paddings=[pad_len], mode=pad_mode) # apply padding
+    elif audio_len > target_len:  # if audio_len is larger than target_len then use Cropping
+        diff_len = (audio_len - target_len)
+        idx = tf.random.uniform([], 0, diff_len, dtype=tf.int32) # select random location for cropping
+        audio = audio[idx: (idx + target_len)]
+    audio = tf.reshape(audio, [target_len])
+    return audio
+
+# Randomly shift audio -> any sound at <t> time may get shifted to <t+shift> time
+def TimeShift(audio, prob=0.5):
+    if random_float() < prob:
+        shift = random_int(shape=[], minval=0, maxval=tf.shape(audio)[0])
+        if random_float() < 0.5:
+            shift = -shift
+        audio = tf.roll(audio, shift, axis=0)
+    return audio
+
+# Apply random noise to audio data
+def GaussianNoise(audio, std=[0.0025, 0.025], prob=0.5):
+    std = random_float([], std[0], std[1])
+    if random_float() < prob:
+        GN = tf.keras.layers.GaussianNoise(stddev=std)
+        audio = GN(audio, training=True) # training=False don't apply noise to data
+    return audio
+
+# Applies augmentation to Audio Signal
+def AudioAug(audio):
+    audio = TimeShift(audio, prob=CFG.timeshift_prob)
+    audio = GaussianNoise(audio, prob=CFG.gn_prob)
+    return audio
+
+def Normalize(data):
+    MEAN = tf.math.reduce_mean(data)
+    STD = tf.math.reduce_std(data)
+    data = tf.math.divide_no_nan(data - MEAN, STD)
+    return data
+
+# Randomly mask data in time and freq axis
+def TimeFreqMask(spec, time_mask, freq_mask, prob=0.5):
+    if random_float() < prob:
+        spec = tfio.audio.freq_mask(spec, param=freq_mask)
+        spec = tfio.audio.time_mask(spec, param=time_mask)
+    return spec
+
+# Applies augmentation to Spectrogram
+def SpecAug(spec):
+    spec = TimeFreqMask(spec, time_mask=CFG.time_mask, freq_mask=CFG.freq_mask, prob=0.5)
+    return spec
+
+# Compute MixUp Augmentation for Spectrogram
+def get_mixup(alpha=0.2, prob=0.5):
+    """Apply Spectrogram-MixUp augmentaiton. Apply Mixup to one batch and its shifted version"""
+    def mixup(specs, labels, alpha=alpha, prob=prob):
+        if random_float() > prob:
+            return specs, labels
+
+        spec_shape = tf.shape(specs)
+        label_shape = tf.shape(labels)
+
+        beta = tfp.distributions.Beta(alpha, alpha) # select lambda from beta distribution
+        lam = beta.sample(1)[0]
+
+        # It's faster to roll the batch by one instead of shuffling it to create image pairs
+        specs = lam * specs + (1 - lam) * tf.roll(specs, shift=1, axis=0) # mixup = [1, 2, 3]*lam + [3, 1, 2]*(1 - lam)
+        labels = lam * labels + (1 - lam) * tf.roll(labels, shift=1, axis=0)
+
+        specs = tf.reshape(specs, spec_shape)
+        labels = tf.reshape(labels, label_shape)
+        return specs, labels
+    return mixup
+
+
+def get_cutmix(alpha, prob=0.5):
+    """Apply Spectrogram-CutMix augmentaiton which only cuts patch across time axis unline
+    typical Computer-Vision CutMix. Apply CutMix to one batch and its shifted version.
+    """
+    def cutmix(specs, labels, alpha=alpha, prob=prob):
+        if random_float() > prob:
+            return specs, labels
+        spec_shape = tf.shape(specs)
+        label_shape = tf.shape(labels)
+        W = tf.cast(spec_shape[1], tf.int32)  # [batch, time, freq, channel]
+
+        # Lambda from beta distribution
+        beta = tfp.distributions.Beta(alpha, alpha)
+        lam = beta.sample(1)[0]
+
+        # It's faster to roll the batch by one instead of shuffling it to create image pairs
+        specs_rolled = tf.roll(specs, shift=1, axis=0) # specs->[1, 2, 3], specs_rolled->[3, 1, 2]
+        labels_rolled = tf.roll(labels, shift=1, axis=0)
+
+        # Select random patch size
+        r_x = random_int([], minval=0, maxval=W)
+        r = 0.5 * tf.math.sqrt(1.0 - lam)
+        r_w_half = tf.cast(r * tf.cast(W, tf.float32), tf.int32)
+
+        # Select random location in time axis
+        x1 = tf.cast(tf.clip_by_value(r_x - r_w_half, 0, W), tf.int32)
+        x2 = tf.cast(tf.clip_by_value(r_x + r_w_half, 0, W), tf.int32)
+
+        # outer-pad patch -> [0, 0, x, x, 0, 0]
+        patch1 = specs[:, x1:x2, :, :]  # [batch, time, freq, channel]
+        patch1 = tf.pad(
+            patch1, [[0, 0], [x1, W - x2], [0, 0], [0, 0]])  # outer-pad
+
+        # inner-pad-patch -> [y, y, 0, 0, y, y]
+        patch2 = specs_rolled[:, x1:x2, :, :]  # [batch, mel, time, channel]
+        patch2 = tf.pad(
+            patch2, [[0, 0], [x1, W - x2], [0, 0], [0, 0]])  # outer-pad
+        patch2 = specs_rolled - patch2  # inner-pad-patch = img - outer-pad-patch
+
+        # patch1 -> [0, 0, x, x, 0, 0], patch2 -> [y, y, 0, 0, y, y]
+        # cutmix = (patch1 + patch2) -> [y, y, x, x, y, y]
+        specs = patch1 + patch2  # cutmix img
+
+        # Compute lambda = [1 - (patch_area/image_area)]
+        lam = tf.cast((1.0 - (x2 - x1) / (W)),tf.float32)  # no H term as (y1 - y2) = H
+        labels = lam * labels + (1.0 - lam) * labels_rolled  # cutmix label
+
+        specs = tf.reshape(specs, spec_shape)
+        labels = tf.reshape(labels, label_shape)
+
+        return specs, labels
+    return cutmix
+
