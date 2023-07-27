@@ -206,7 +206,7 @@ for fold, (_, val_idx) in enumerate(skf.split(valid_df, y=valid_df['target'])):
 # Split test data into folds
 for fold, (_, val_idx) in enumerate(skf.split(test_df, y=test_df['target'])):
     test_df.loc[val_idx, 'fold'] = fold
-display(test_df.groupby(['fold','target']).size())
+
 
 train_df.fold.value_counts()
 
