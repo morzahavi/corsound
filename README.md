@@ -36,3 +36,10 @@ $ cd corsound
 $ python main.py
 ````
 
+### GPU test
+To test whether the container utilises the machine GPU run the following script inside the container:
+````bash
+$ cd corsound
+$ python test_gpu.py
+````
+
