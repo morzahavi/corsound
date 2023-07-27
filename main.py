@@ -286,4 +286,79 @@ write_tfrecord(train_df,split='train', show=True)
 write_tfrecord(valid_df,split='valid', show=True)
 write_tfrecord(test_df,split='test', show=True)
 
+import re, math
+def decode_audio(data, audio_len, target_len=1*16000):
+    audio, sr = tf.audio.decode_wav(data)
+    audio = tf.reshape(audio, [audio_len]) # explicit size needed for TPU
+    audio = audio[:target_len]
+    audio = tf.cast(audio,tf.float32)
+    # compute min and max
+    min_ = tf.reduce_min(audio)
+    max_ = tf.reduce_max(audio)
+    # normalization
+    audio = (audio - min_) / (max_ - min_) # mean=0 & std=1
+    return audio
+
+def read_labeled_tfrecord(example):
+    LABELED_TFREC_FORMAT = {
+        "audio" : tf.io.FixedLenFeature([], tf.string), # tf.string means bytestring
+        "audio_len" : tf.io.FixedLenFeature([], tf.int64),
+        "target" : tf.io.FixedLenFeature([], tf.int64),
+    }
+    example = tf.io.parse_single_example(example, LABELED_TFREC_FORMAT)
+    audio_len = example['audio_len']
+    audio = decode_audio(example['audio'], audio_len)
+    target = example['target']
+    return audio, target  # returns a dataset of (image, label) pairs
+
+def load_dataset(fileids, labeled=True, ordered=False):
+    # Read from TFRecords. For optimal performance, reading from multiple files at once and
+    # disregarding data order. Order does not matter since we will be shuffling the data anyway.
+
+    ignore_order = tf.data.Options()
+    if not ordered:
+        ignore_order.experimental_deterministic = False # disable order, increase speed
+
+    dataset = tf.data.TFRecordDataset(fileids, num_parallel_reads=AUTO) # automatically interleaves reads from multiple files
+    dataset = dataset.with_options(ignore_order) # uses data as soon as it streams in, rather than in its original order
+    dataset = dataset.map(read_labeled_tfrecord)
+    # returns a dataset of (image, label) pairs if labeled=True or (image, id) pairs if labeled=False
+    return dataset
+
+def get_dataset(FILENAMES):
+    dataset = load_dataset(FILENAMES, labeled=True)
+    #     dataset = dataset.repeat() # the training dataset must repeat for several epochs
+    dataset = dataset.shuffle(100, seed=SEED)
+    dataset = dataset.batch(BATCH_SIZE)
+    dataset = dataset.prefetch(AUTO) # prefetch next batch while training (autotune prefetch buffer size)
+    return dataset
+
+def count_data_items(fileids):
+    # the number of data items is written in the id of the .tfrec files, i.e. flowers00-230.tfrec = 230 data items
+    n = [int(re.compile(r"-([0-9]*)\.").search(fileid).group(1)) for fileid in fileids]
+    return np.sum(n)
+
+def display_batch(batch, row=2, col=5):
+    audios, targets = batch
+    plt.figure(figsize=(col*5, 5*row))
+    for idx in range(row*col):
+        audio = audios[idx,]
+        target = targets[idx,]
+        plt.subplot(row, col, idx+1)
+        plt.plot(audio, color='r' if target else 'b')
+        plt.title('Fake' if target else 'Real', fontsize=15)
+    #         plt.xticks([])
+    #         plt.yticks([])
+    plt.tight_layout()
+    plt.savefig(str(idx))
+    plt.close()
+
+BATCH_SIZE = 32
+AUTO = tf.data.experimental.AUTOTUNE
+TRAIN_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/train*.tfrec')
+VALID_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/valid*.tfrec')
+TEST_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/test*.tfrec')
+print('There are %i train, %i valid & %i test images'%(count_data_items(TRAIN_FILENAMES),
+                                                       count_data_items(VALID_FILENAMES),
+                                                       count_data_items(TEST_FILENAMES)))
 
