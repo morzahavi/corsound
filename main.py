@@ -372,11 +372,3 @@ print('There are %i train, %i valid & %i test images'%(count_data_items(TRAIN_FI
                                                        count_data_items(VALID_FILENAMES),
                                                        count_data_items(TEST_FILENAMES)))
 
-# Display Batch Images
-ds = get_dataset(TRAIN_FILENAMES)
-batch = next(iter(ds))
-display_batch(batch, row=2, col=4);
-
-auiods, targets = batch
-np.unique(targets.numpy(), return_counts=True)
-
