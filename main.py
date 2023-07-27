@@ -935,3 +935,93 @@ plt.gcf()
 plt.savefig(f'{str(batch)}.png')
 plt.close()
 
+def get_metrics():
+    acc = tf.keras.metrics.BinaryAccuracy()
+    f1_score = tfa.metrics.F1Score(num_classes=1, threshold=0.5, average='macro')
+    precision = tf.keras.metrics.Precision()
+    recall = tf.keras.metrics.Recall()
+    return [acc, precision, recall, f1_score]
+
+
+import math
+
+def get_lr_callback(mode='exp', batch_size=64, epochs=30, plot=False):
+    """adapted from @cdeotte"""
+    lr_start = 5e-5
+    lr = 0.001 # base_lr
+    lr_max = 5e-4 # max lr - will be multiplied by batch_size
+    lr_min = 0.1e-4 # min lr
+    lr_ramp_ep = 4 # warming up epochs
+    lr_sus_ep = 0 # sustain epochs lr after warming up
+    lr_decay = 0.8 # decay rate
+
+    def lrfn(epoch):
+        if epoch < lr_ramp_ep:
+            lr = (lr_max - lr_start) / lr_ramp_ep * epoch + lr_start
+
+        elif epoch < lr_ramp_ep + lr_sus_ep:
+            lr = lr_max
+
+        elif mode == 'exp':
+            lr = (lr_max - lr_min) * lr_decay**(epoch - \
+                                                lr_ramp_ep - lr_sus_ep) + lr_min
+
+        elif mode == 'step':
+            lr = lr_max * lr_decay**((epoch - lr_ramp_ep - lr_sus_ep) // 2)
+
+        elif mode == 'cosine':
+            decay_total_epochs = epochs - lr_ramp_ep - lr_sus_ep + 3
+            decay_epoch_index = epoch - lr_ramp_ep - lr_sus_ep
+            phase = math.pi * decay_epoch_index / decay_total_epochs
+            cosine_decay = 0.5 * (1 + math.cos(phase))
+            lr = (lr_max - lr_min) * cosine_decay + lr_min
+        return lr
+
+    if plot:
+        plt.figure(figsize=(10, 5))
+        plt.plot(
+            np.arange(epochs), [lrfn(epoch) for epoch in np.arange(epochs)], marker='o')
+        plt.xlabel('epoch')
+        plt.ylabel('learnig rate')
+        plt.title('Learning Rate Scheduler')
+    return tf.keras.callbacks.LearningRateScheduler(lrfn, verbose=0)
+
+
+lr_callback = get_lr_callback(mode=CFG.lr_schedule,epochs=30,plot=True)
+
+import audio_classification_models as acm
+
+URL = 'https://github.com/awsaf49/audio_classification_models/releases/download/v1.0.8/conformer-encoder.h5'
+
+def Conformer(input_shape=(128, 80, 1),num_classes=1, final_activation='sigmoid', pretrain=True):
+    """Souce Code: https://github.com/awsaf49/audio_classification_models"""
+    inp = tf.keras.layers.Input(shape=input_shape)
+    backbone = acm.ConformerEncoder()
+    out = backbone(inp)
+    if pretrain:
+        acm.utils.weights.load_pretrain(backbone, url=URL)
+    out = tf.keras.layers.GlobalAveragePooling1D()(out)
+    #     out = tf.keras.layers.Dense(32, activation='selu')(out)
+    out = tf.keras.layers.Dense(num_classes, activation=final_activation)(out)
+    model = tf.keras.models.Model(inp, out)
+    return model
+
+def get_model(name=CFG.model_name, loss=CFG.loss,):
+    model = Conformer(input_shape=[*CFG.spec_shape,1],pretrain=True)
+    lr = CFG.lr
+    if CFG.optimizer == "Adam":
+        opt = tf.keras.optimizers.Adam(learning_rate=lr)
+    elif CFG.optimizer == "AdamW":
+        opt = tfa.optimizers.AdamW(learning_rate=lr, weight_decay=lr)
+    elif CFG.optimizer == "RectifiedAdam":
+        opt = tfa.optimizers.RectifiedAdam(learning_rate=lr)
+    else:
+        raise ValueError("Wrong Optimzer Name")
+    model.compile(
+        optimizer=opt,
+        loss=loss,
+        steps_per_execution=CFG.steps_per_execution, # to reduce idle time
+        metrics=get_metrics()
+    )
+    return model
+
