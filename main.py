@@ -281,10 +281,16 @@ def write_tfrecord(df, split='train', show=True):
                 filesize = os.path.getsize(filepath)/10**6
                 print(filename,':',np.around(filesize, 2),'MB')
 
-##
-write_tfrecord(train_df,split='train', show=True)
-write_tfrecord(valid_df,split='valid', show=True)
-write_tfrecord(test_df,split='test', show=True)
+## Write tf records if directory tmp does not exist
+def tf_records_condition():
+    write_tfrecord(train_df,split='train', show=True)
+    write_tfrecord(valid_df,split='valid', show=True)
+    write_tfrecord(test_df,split='test', show=True)
+
+directory_path = "tmp"
+if not os.path.exists(directory_path):
+    tf_records_condition()
+
 
 import re, math
 def decode_audio(data, audio_len, target_len=1*16000):
