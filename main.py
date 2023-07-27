@@ -107,3 +107,41 @@ class CFG:
 
     # Clip values to [0, 1]
     clip = False
+
+
+def seeding(SEED):
+    """
+    Sets all random seeds for the program (Python, NumPy, and TensorFlow).
+    """
+    np.random.seed(SEED)
+    random.seed(SEED)
+    os.environ["PYTHONHASHSEED"] = str(SEED)
+    #     os.environ["TF_CUDNN_DETERMINISTIC"] = str(SEED)
+    tf.random.set_seed(SEED)
+    print("seeding done!!!")
+
+
+seeding(CFG.seed)
+
+def configure_device():
+    try:
+        tpu = tf.distribute.cluster_resolver.TPUClusterResolver.connect()  # connect to tpu cluster
+        strategy = tf.distribute.TPUStrategy(tpu) # get strategy for tpu
+        print('> Running on TPU ', tpu.master(), end=' | ')
+        print('Num of TPUs: ', strategy.num_replicas_in_sync)
+        device='TPU'
+    except: # otherwise detect GPUs
+        tpu = None
+        gpus = tf.config.list_logical_devices('GPU') # get logical gpus
+        ngpu = len(gpus)
+        if ngpu: # if number of GPUs are 0 then CPU
+            strategy = tf.distribute.MirroredStrategy(gpus) # single-GPU or multi-GPU
+            print("> Running on GPU", end=' | ')
+            print("Num of GPUs: ", ngpu)
+            device='GPU'
+        else:
+            print("> Running on CPU")
+            strategy = tf.distribute.get_strategy() # connect to single gpu or cpu
+            device='CPU'
+    return strategy, device, tpu
+
