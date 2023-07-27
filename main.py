@@ -809,7 +809,7 @@ def plot_confusion_matrix(cm,
                           normalize=False,
                           title='Confusion matrix',
                           cmap=plt.cm.Blues,
-                          save = False):
+                          save = True):
     """Plot Confusion Matrix"""
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
@@ -832,7 +832,6 @@ def plot_confusion_matrix(cm,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.grid(False)
-    plt.tight_layout()
     plt.savefig('cm.png')
     plt.close()
     return
