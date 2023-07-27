@@ -184,7 +184,7 @@ SPEC_WIDTH = 256 # time axis
 HOP_LEN = AUDIO_LEN//(SPEC_WIDTH - 1) # non-overlap region
 FMAX = SAMPLE_RATE//2 # max frequency
 SPEC_SHAPE = [SPEC_WIDTH, N_MELS] # output spectrogram shape
-
+print("1")
 train_df = pd.read_csv(f'{BASE_PATH}/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt',
                        sep=" ", header=None)
 train_df.columns =['speaker_id','filename','system_id','null','class_name']
