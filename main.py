@@ -1171,14 +1171,14 @@ history = model.fit(
 history = pd.DataFrame(history.history)
 
 # Load best weights
-model.load_weights("/kaggle/working/ckpt.h5")
+model.load_weights("checkpoints/ckpt.h5")
 
 # Plot Training History
 if CFG.display_plot:
     plot_history(history)
 
 # Load best weights
-model.load_weights("/kaggle/working/ckpt.h5")
+model.load_weights("checkpoints/ckpt.h5")
 
 # Compute & save best Test result
 print("\n>> Valid Result:")
