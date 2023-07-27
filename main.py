@@ -1128,7 +1128,7 @@ with strategy.scope():
 
 # Callbacks
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
-    "/kaggle/working/ckpt.h5",
+    "checkpoints/ckpt.h5",
     verbose=CFG.verbose,
     monitor="val_f1_score",
     mode="max",
@@ -1159,102 +1159,93 @@ valid_ds = get_dataset(
     drop_remainder=False,
 )
 
-# Train model
-history = model.fit(
-    train_ds,
-    epochs=CFG.epochs if not CFG.debug else 2,
-    steps_per_epoch=STEPS_PER_EPOCH,
-    callbacks=callbacks,
-    validation_data=valid_ds,
-    #         validation_steps = NUM_VALID/BATCH_SIZE,
-    verbose=CFG.verbose,
-)
 
-# Convert dict history to df history
-history = pd.DataFrame(history.history)
-
-# Load best weights
-model.load_weights("/kaggle/working/ckpt.h5")
-
-# Plot Training History
-if CFG.display_plot:
-    plot_history(history)
-
-# Load best weights
-model.load_weights("/kaggle/working/ckpt.h5")
-
-# Compute & save best Test result
-print("\n>> Valid Result:")
-valid_result = model.evaluate(
-    get_dataset(
-        VALID_FILENAMES,
-        batch_size=BATCH_SIZE,
-        augment=False,
-        shuffle=False,
-        repeat=False,
-        cache=False,
-    ),
-    return_dict=True,
-    verbose=1,
-)
-print()
-
-# Compute & save best Test result
-print("\n>> Test Result:")
-test_result = model.evaluate(
-    get_dataset(
-        TEST_FILENAMES,
-        batch_size=BATCH_SIZE,
-        augment=False,
-        shuffle=False,
-        repeat=False,
-        cache=False,
-    ),
-    return_dict=True,
-    verbose=1,
-)
-print()
-
-# Log in wandb
-if CFG.wandb:
-    best_epoch = np.argmax(history["val_f1_score"]) + 1
-    wandb.log({"best": {"valid":valid_result,
-                        "test":test_result,
-                        "epoch":best_epoch}})
-    wandb.run.finish()
-
-# Get Prediction for test data
-test_ds = get_dataset(TEST_FILENAMES,
-                      shuffle=False,
-                      augment=False,
-                      repeat=False,
-                      batch_size=BATCH_SIZE,
-                      cache=False,
-                      drop_remainder=False,
-                      return_id=False,
-                      return_label=False,
-                      )
-test_preds = model.predict(test_ds, verbose=1, steps=NUM_TEST/BATCH_SIZE)
-
-# Extract test metadata from tfrecord
-test_ds = get_dataset(TEST_FILENAMES,
-                      shuffle=False,
-                      augment=False,
-                      repeat=False,
-                      batch_size=1,
-                      cache=False,
-                      drop_remainder=False,
-                      return_id=True,
-                      return_label=True,
-                      )
-info = [(id_.numpy()[0].decode('utf-8'),label.numpy()[0]) for _,label,id_ in tqdm(iter(test_ds),total=NUM_TEST)]
-test_ids, test_labels = list(zip(*info))
-
-# Plot Confusion Matrix
-cm = confusion_matrix(test_labels, test_preds.reshape(-1).round())
-plt.figure(figsize=(6,6))
-plot_confusion_matrix(cm, ["Real","Fake"],normalize=True)
-plt.tight_layout()
-plt.gcf()
-plt.savefig('images/cm.png')
-plt.close()
+#
+# # Convert dict history to df history
+# history = pd.DataFrame(history.history)
+#
+# # Load best weights
+# model.load_weights("/kaggle/working/ckpt.h5")
+#
+# # Plot Training History
+# if CFG.display_plot:
+#     plot_history(history)
+#
+# # Load best weights
+# model.load_weights("/kaggle/working/ckpt.h5")
+#
+# # Compute & save best Test result
+# print("\n>> Valid Result:")
+# valid_result = model.evaluate(
+#     get_dataset(
+#         VALID_FILENAMES,
+#         batch_size=BATCH_SIZE,
+#         augment=False,
+#         shuffle=False,
+#         repeat=False,
+#         cache=False,
+#     ),
+#     return_dict=True,
+#     verbose=1,
+# )
+# print()
+#
+# # Compute & save best Test result
+# print("\n>> Test Result:")
+# test_result = model.evaluate(
+#     get_dataset(
+#         TEST_FILENAMES,
+#         batch_size=BATCH_SIZE,
+#         augment=False,
+#         shuffle=False,
+#         repeat=False,
+#         cache=False,
+#     ),
+#     return_dict=True,
+#     verbose=1,
+# )
+# print()
+#
+# # Log in wandb
+# if CFG.wandb:
+#     best_epoch = np.argmax(history["val_f1_score"]) + 1
+#     wandb.log({"best": {"valid":valid_result,
+#                         "test":test_result,
+#                         "epoch":best_epoch}})
+#     wandb.run.finish()
+#
+# # Get Prediction for test data
+# test_ds = get_dataset(TEST_FILENAMES,
+#                       shuffle=False,
+#                       augment=False,
+#                       repeat=False,
+#                       batch_size=BATCH_SIZE,
+#                       cache=False,
+#                       drop_remainder=False,
+#                       return_id=False,
+#                       return_label=False,
+#                       )
+# test_preds = model.predict(test_ds, verbose=1, steps=NUM_TEST/BATCH_SIZE)
+#
+# # Extract test metadata from tfrecord
+# test_ds = get_dataset(TEST_FILENAMES,
+#                       shuffle=False,
+#                       augment=False,
+#                       repeat=False,
+#                       batch_size=1,
+#                       cache=False,
+#                       drop_remainder=False,
+#                       return_id=True,
+#                       return_label=True,
+#                       )
+# info = [(id_.numpy()[0].decode('utf-8'),label.numpy()[0]) for _,label,id_ in tqdm(iter(test_ds),total=NUM_TEST)]
+# test_ids, test_labels = list(zip(*info))
+#
+# # Plot Confusion Matrix
+# cm = confusion_matrix(test_labels, test_preds.reshape(-1).round())
+# plt.figure(figsize=(6,6))
+# plot_confusion_matrix(cm, ["Real","Fake"],normalize=True)
+# plt.tight_layout()
+# plt.gcf()
+# plt.savefig('images/cm.png')
+# plt.close()
