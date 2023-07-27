@@ -28,7 +28,7 @@ env/
 *.pyz
 *.pyw
 __pycache__/
-
+takeouts.py
 # Distribution / packaging
 *.egg-info/
 dist/

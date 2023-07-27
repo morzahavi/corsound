@@ -2,6 +2,7 @@
 torch
 torchvision
 torchaudio
+cv2
 ###### Requirements without Version Specifiers ######
 numpy
 pandas

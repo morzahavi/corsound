@@ -1,7 +1,13 @@
 # Corsound
 
+# Introduction
+The application is based on a Docker image called `tensorflow/tensorflow`
+which is an x86_64 20.04 ubuntu based Linux distro, with Cuda toolkit.
+
 ## Prerequisites 
 Docker Desktop installed
+
+
 
 ## Installation
 

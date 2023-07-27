@@ -13,4 +13,6 @@ RUN mkdir /corsound/asvspoof
 RUN pip install -r /corsound/req.txt
 # Install custom functions for project
 RUN sh /corsound/install_functions.sh
+# Install CUDA backend
+RUN sh corsound/install_cuda.sh
 

@@ -4,7 +4,7 @@ import random
 import os
 import shutil
 
-import cv2
+
 import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = 'DejaVu Sans'
 import seaborn as sns
