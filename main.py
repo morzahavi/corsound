@@ -917,6 +917,6 @@ imgs, tars = batch
 # print(f'image_dtype: {imgs.dtype} target_dtype:{tars.dtype}')
 display_batch(batch, row=3, col=3)
 plt.tight_layout()
-plt.savefig(batch)
+plt.savefig(str(batch))
 plt.close()
 
