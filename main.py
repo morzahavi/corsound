@@ -173,18 +173,6 @@ FMAX = SAMPLE_RATE//2 # max frequency
 SPEC_SHAPE = [SPEC_WIDTH, N_MELS] # output spectrogram shape
 
 
-# # Train
-# train_df = pd.read_csv(f'{BASE_PATH}/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt',
-#                        sep=" ", header=None)
-# train_df.columns =['speaker_id','filename','system_id','null','class_name']
-# train_df.drop(columns=['null'],inplace=True)
-# train_df['filepath'] = f'{BASE_PATH}/ASVspoof2019_LA_train/flac/'+train_df.filename+'.flac'
-# train_df['target'] = (train_df.class_name=='spoof').astype('int32') # set labels 1 for fake and 0 for real
-# if True:
-#     train_df = train_df.groupby(['target']).sample(2500).reset_index(drop=True)
-# print(f'Train Samples: {len(train_df)}')
-# train_df.head(2)
-
 
 
 
@@ -220,8 +208,17 @@ if DEBUG:
     test_df = test_df.groupby(['target']).sample(2000).reset_index(drop=True)
 print(f'Test Samples: {len(test_df)}')
 test_df.head(2)
+
 from sklearn.model_selection import StratifiedKFold
 skf = StratifiedKFold(n_splits=FOLDS, shuffle=True, random_state=SEED)
+# Split valid data into folds
+for fold, (_, val_idx) in enumerate(skf.split(valid_df, y=valid_df['target'])):
+    valid_df.loc[val_idx, 'fold'] = fold
+
+# Split test data into folds
+for fold, (_, val_idx) in enumerate(skf.split(test_df, y=test_df['target'])):
+    test_df.loc[val_idx, 'fold'] = fold
+display(test_df.groupby(['fold','target']).size())
 
 
 
