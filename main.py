@@ -145,3 +145,7 @@ def configure_device():
             device='CPU'
     return strategy, device, tpu
 
+strategy, CFG.device, tpu = configure_device()
+AUTO = tf.data.experimental.AUTOTUNE
+REPLICAS = strategy.num_replicas_in_sync
+print(f'REPLICAS: {REPLICAS}')
