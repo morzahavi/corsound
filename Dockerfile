@@ -9,6 +9,16 @@ RUN git clone https://github.com/morzahavi/corsound.git
 # Set the working directory inside the container
 WORKDIR /corsound
 RUN mkdir /corsound/asvspoof
+# Install tensorflow repo
+RUN cd && git clone https://github.com/tensorflow/tensorflow.git
+# Install bazel for GPU integration
+RUN apt update && apt install bazel
+RUN apt update && apt full-upgrade
+RUN apt install bazel-1.0.0
+RUN apt install default-jdk
+RUN apt install g++ unzip zip
+RUN apt-get install default-jdk
+
 # Install project dependencies
 RUN pip install -r /corsound/req.txt
 # Install custom functions for project

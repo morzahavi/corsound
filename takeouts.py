@@ -1,5 +1,9 @@
 
 
+
+# The right run command with mount
+docker run -it -v /Users/morzahavi/icloud/Downloads/asvspoof:/corsound/asvspoof corsound
+
 ### Version main.py 202307270854
 import os
 import argparse

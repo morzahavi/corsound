@@ -4,6 +4,7 @@
 The application is based on a Docker image called `tensorflow/tensorflow`
 which is an x86_64 20.04 ubuntu based Linux distro, with Cuda toolkit.
 
+
 ## Prerequisites 
 Docker Desktop installed
 
@@ -26,6 +27,12 @@ Replace the PATH_TO_DATA with the path to the asvspoof directory on you machine
 $ docker build -t corsound .
 $ docker run -it /PATH_TO_DATA:/corsound/asvspoof corsound /bin/bash    
 ````
+
+Every time you run the container after the initial build, you should run:
+
+```bash
+git pull
+```
 ### Install the custom functions 
 Run this script inside the container
 ````bash
