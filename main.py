@@ -354,7 +354,7 @@ def train_serialize_example(feature0, feature1, feature2,
 
 
 ## Write TFRecord
-os.makedirs('/tmp/asvspoof', exist_ok=True)
+os.makedirs('tmp/asvspoof', exist_ok=True)
 ##
 def write_tfrecord(df, split='train', show=True):
     df = df.copy()
@@ -363,7 +363,7 @@ def write_tfrecord(df, split='train', show=True):
         fold_df = df.query("fold==@fold").sample(frac=1.0)
         if show:
             print(); print('Writing %s TFRecord of fold %i :'%(split,fold))
-        with tf.io.TFRecordWriter('/tmp/asvspoof/%s%.2i-%i.tfrec'%(split,fold,fold_df.shape[0])) as writer:
+        with tf.io.TFRecordWriter('tmp/asvspoof/%s%.2i-%i.tfrec'%(split,fold,fold_df.shape[0])) as writer:
             samples = fold_df.shape[0] # samples = 200
             it = tqdm(range(samples)) if show else range(samples)
             for k in it: # images in fold
@@ -385,7 +385,7 @@ def write_tfrecord(df, split='train', show=True):
                 )
                 writer.write(example)
             if show:
-                filepath = '/tmp/asvspoof/%s%.2i-%i.tfrec'%(split,fold,fold_df.shape[0])
+                filepath = 'tmp/asvspoof/%s%.2i-%i.tfrec'%(split,fold,fold_df.shape[0])
                 filename = filepath.split('/')[-1]
                 filesize = os.path.getsize(filepath)/10**6
                 print(filename,':',np.around(filesize, 2),'MB')
@@ -396,10 +396,3 @@ write_tfrecord(valid_df,split='valid', show=True)
 write_tfrecord(test_df,split='test', show=True)
 
 
-TRAIN_FILENAMES = tf.io.gfile.glob(BASE_PATH + '/asvspoof/train*.tfrec')
-VALID_FILENAMES = tf.io.gfile.glob(BASE_PATH + '/asvspoof/valid*.tfrec')
-TEST_FILENAMES = tf.io.gfile.glob(BASE_PATH + '/asvspoof/test*.tfrec')
-
-print('# NUM TRAIN: {:,}'.format(count_data_items(TRAIN_FILENAMES)))
-print('# NUM VALID: {:,}'.format(count_data_items(VALID_FILENAMES)))
-print('# NUM TEST: {:,}'.format(count_data_items(TEST_FILENAMES)))
