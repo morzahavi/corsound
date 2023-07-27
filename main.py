@@ -1,59 +1,22 @@
-import librosa.display
-import warnings
-warnings.filterwarnings("ignore")
+import tensorflow as tf
 import pandas as pd
-import numpy as np
-import random
 import os
 import librosa
 import librosa.display
-
 import matplotlib.pyplot as plt
-plt.rcParams["font.family"] = 'DejaVu Sans'
 import seaborn as sns
-sns.set_style("whitegrid", {'axes.grid' : False})
-
-import tensorflow as tf
-
-import re, math
-import tensorflow_addons as tfa
-import tensorflow.keras.backend as K
-import tensorflow_io as tfio
-import tensorflow_probability as tfp
-
-import yaml
-from IPython import display as ipd
-import json
-from datetime import datetime
-
-from glob import glob
-from tqdm.notebook import tqdm
-import sklearn
-from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
-from sklearn.model_selection import KFold
-from sklearn.metrics import roc_auc_score
-from IPython import display as ipd
-
-import itertools
-import scipy
 import warnings
-
-# import rasterio as rio
-# import folium
-#
-# import ee
-# from kaggle_secrets import UserSecretsClient
-# from google.oauth2.credentials import Credentials
-
+# Graphics
+plt.rcParams["font.family"] = 'DejaVu Sans'
+sns.set_style("whitegrid", {'axes.grid': False})
+# tf
+tf.config.run_functions_eagerly(True)
 # Show less log messages
+warnings.filterwarnings("ignore")
 tf.get_logger().setLevel('ERROR')
 tf.autograph.set_verbosity(0)
-
-# Set true to show less logging messages
 os.environ["WANDB_SILENT"] = "true"
-import wandb
-
-
+#
 BASE_PATH = '/asvpoof/LA'
 FOLDS = 10
 SEED = 101
@@ -61,27 +24,23 @@ DEBUG = True
 
 # Audio params
 SAMPLE_RATE = 16000
-DURATION = 5.0 # duration in second
+DURATION = 5.0  # duration in second
 AUDIO_LEN = int(SAMPLE_RATE * DURATION)
 
 # Spectrogram params
-N_MELS = 128 # freq axis
+N_MELS = 128  # freq axis
 N_FFT = 2048
-SPEC_WIDTH = 256 # time axis
-HOP_LEN = AUDIO_LEN//(SPEC_WIDTH - 1) # non-overlap region
-FMAX = SAMPLE_RATE//2 # max frequency
-SPEC_SHAPE = [SPEC_WIDTH, N_MELS] # output spectrogram shape
-
-
-
-
+SPEC_WIDTH = 256  # time axis
+HOP_LEN = AUDIO_LEN // (SPEC_WIDTH - 1)  # non-overlap region
+FMAX = SAMPLE_RATE // 2  # max frequency
+SPEC_SHAPE = [SPEC_WIDTH, N_MELS]  # output spectrogram shape
 
 train_df = pd.read_csv(f'asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt',
                        sep=" ", header=None)
-train_df.columns =['speaker_id','filename','system_id','null','class_name']
-train_df.drop(columns=['null'],inplace=True)
-train_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_train/flac/'+train_df.filename+'.flac'
-train_df['target'] = (train_df.class_name=='spoof').astype('int32') # set labels 1 for fake and 0 for real
+train_df.columns = ['speaker_id', 'filename', 'system_id', 'null', 'class_name']
+train_df.drop(columns=['null'], inplace=True)
+train_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_train/flac/' + train_df.filename + '.flac'
+train_df['target'] = (train_df.class_name == 'spoof').astype('int32')  # set labels 1 for fake and 0 for real
 if DEBUG:
     train_df = train_df.groupby(['target']).sample(2500).reset_index(drop=True)
 print(f'Train Samples: {len(train_df)}')
@@ -89,10 +48,10 @@ train_df.head(2)
 
 valid_df = pd.read_csv(f'asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.dev.trl.txt',
                        sep=" ", header=None)
-valid_df.columns =['speaker_id','filename','system_id','null','class_name']
-valid_df.drop(columns=['null'],inplace=True)
-valid_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_dev/flac/'+valid_df.filename+'.flac'
-valid_df['target'] = (valid_df.class_name=='spoof').astype('int32')
+valid_df.columns = ['speaker_id', 'filename', 'system_id', 'null', 'class_name']
+valid_df.drop(columns=['null'], inplace=True)
+valid_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_dev/flac/' + valid_df.filename + '.flac'
+valid_df['target'] = (valid_df.class_name == 'spoof').astype('int32')
 if DEBUG:
     valid_df = valid_df.groupby(['target']).sample(2000).reset_index(drop=True)
 print(f'Valid Samples: {len(valid_df)}')
@@ -100,10 +59,10 @@ valid_df.head(2)
 
 test_df = pd.read_csv(f'asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt',
                       sep=" ", header=None)
-test_df.columns =['speaker_id','filename','system_id','null','class_name']
-test_df.drop(columns=['null'],inplace=True)
-test_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_eval/flac/'+test_df.filename+'.flac'
-test_df['target'] = (test_df.class_name=='spoof').astype('int32')
+test_df.columns = ['speaker_id', 'filename', 'system_id', 'null', 'class_name']
+test_df.drop(columns=['null'], inplace=True)
+test_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_eval/flac/' + test_df.filename + '.flac'
+test_df['target'] = (test_df.class_name == 'spoof').astype('int32')
 if DEBUG:
     test_df = test_df.groupby(['target']).sample(2000).reset_index(drop=True)
 print(f'Test Samples: {len(test_df)}')
@@ -121,11 +80,13 @@ def load_audio(path, sr=16000):
     audio, sr = librosa.load(path, sr=sr)
     return audio, sr
 
+
 def plot_audio(audio, sr=16000):
     fig = librosa.display.waveshow(audio,
                                    x_axis='time',
                                    sr=sr)
     return fig
+
 
 # def listen_audio(audio, sr=16000):
 #     display(ipd.Audio(audio, rate=sr))
@@ -135,19 +96,20 @@ def get_spec(audio):
     spec = librosa.power_to_db(spec)
     return spec
 
+
 def plot_spec(spec, sr=16000):
     fig = librosa.display.specshow(spec,
                                    x_axis='time',
                                    y_axis='hz',
                                    hop_length=HOP_LEN,
                                    sr=SAMPLE_RATE,
-                                   fmax=FMAX,)
+                                   fmax=FMAX, )
     return fig
 
 
-row = train_df[train_df.target==0].iloc[10]
+row = train_df[train_df.target == 0].iloc[10]
 print(f'> Filename: {row.filename} | Label: {row.class_name}')
-audio, sr= load_audio(row.filepath, sr=None)
+audio, sr = load_audio(row.filepath, sr=None)
 audio = audio[:AUDIO_LEN]
 spec = get_spec(audio)
 
@@ -155,26 +117,25 @@ spec = get_spec(audio)
 # listen_audio(audio, sr=16000)
 
 print("# Plot\n")
-plt.figure(figsize=(12*2,5))
+plt.figure(figsize=(12 * 2, 5))
 
 plt.subplot(121)
 plot_audio(audio)
-plt.title("Waveform",fontsize=17)
+plt.title("Waveform", fontsize=17)
 plt.tight_layout()
 plt.savefig('wave_form_real')
 plt.close()
 
-
 plt.subplot(122)
-plot_spec(spec);
-plt.title("Spectrogram",fontsize=17)
+plot_spec(spec)
+plt.title("Spectrogram", fontsize=17)
 plt.tight_layout()
 plt.savefig('wave_spect_real')
 plt.close()
 
-row = train_df[train_df.target==1].iloc[10]
+row = train_df[train_df.target == 1].iloc[10]
 print(f'Filename: {row.filename} | Label: {row.class_name}')
-audio, sr= load_audio(row.filepath, sr=None)
+audio, sr = load_audio(row.filepath, sr=None)
 audio = audio[:AUDIO_LEN]
 spec = get_spec(audio)
 
@@ -182,24 +143,24 @@ spec = get_spec(audio)
 # listen_audio(audio, sr=16000)
 
 print("# Plot\n")
-plt.figure(figsize=(12*2,5))
+plt.figure(figsize=(12 * 2, 5))
 
 plt.subplot(121)
 plot_audio(audio)
-plt.title("Waveform",fontsize=17)
+plt.title("Waveform", fontsize=17)
 plt.tight_layout()
 plt.savefig('wave_form_fake')
 plt.close()
 
 plt.subplot(122)
 plot_spec(spec);
-plt.title("Spectrogram",fontsize=17)
+plt.title("Spectrogram", fontsize=17)
 plt.tight_layout()
 plt.savefig('wave_spect_fake')
 plt.close()
 
-
 from sklearn.model_selection import StratifiedKFold
+
 skf = StratifiedKFold(n_splits=FOLDS, shuffle=True, random_state=SEED)
 
 # Split train data into folds
@@ -214,7 +175,6 @@ for fold, (_, val_idx) in enumerate(skf.split(valid_df, y=valid_df['target'])):
 for fold, (_, val_idx) in enumerate(skf.split(test_df, y=test_df['target'])):
     test_df.loc[val_idx, 'fold'] = fold
 
-
 train_df.fold.value_counts()
 
 
@@ -222,58 +182,61 @@ train_df.fold.value_counts()
 def _bytes_feature(value):
     """Returns a bytes_list from a string / byte."""
     if isinstance(value, type(tf.constant(0))):
-        value = value.numpy() # BytesList won't unpack a string from an EagerTensor.
+        value = value.numpy()  # BytesList won't unpack a string from an EagerTensor.
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
 
 def _float_feature(value):
     """Returns a float_list from a float / double."""
     return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
 
+
 def _int64_feature(value):
     """Returns an int64_list from a bool / enum / int / uint."""
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
+
 def train_serialize_example(feature0, feature1, feature2,
-                            feature3, feature4,feature5,feature6):
+                            feature3, feature4, feature5, feature6):
     feature = {
-        'audio':_bytes_feature(feature0),
-        'id':_bytes_feature(feature1),
-        'speaker_id':_bytes_feature(feature2),
-        'system_id':_bytes_feature(feature3),
-        'class_name':_bytes_feature(feature4),
-        'audio_len':_int64_feature(feature5),
-        'target':_int64_feature(feature6),
+        'audio': _bytes_feature(feature0),
+        'id': _bytes_feature(feature1),
+        'speaker_id': _bytes_feature(feature2),
+        'system_id': _bytes_feature(feature3),
+        'class_name': _bytes_feature(feature4),
+        'audio_len': _int64_feature(feature5),
+        'target': _int64_feature(feature6),
     }
     example_proto = tf.train.Example(features=tf.train.Features(feature=feature))
     return example_proto.SerializeToString()
 
 
-
-
-
 ## Write TFRecord
 os.makedirs('tmp/asvspoof', exist_ok=True)
+
+
 ##
 def write_tfrecord(df, split='train', show=True):
     df = df.copy()
     folds = sorted(df.fold.unique().tolist())
-    for fold in tqdm(folds): # create tfrecord for each fold
+    for fold in tqdm(folds):  # create tfrecord for each fold
         fold_df = df.query("fold==@fold").sample(frac=1.0)
         if show:
-            print(); print('Writing %s TFRecord of fold %i :'%(split,fold))
-        with tf.io.TFRecordWriter('tmp/asvspoof/%s%.2i-%i.tfrec'%(split,fold,fold_df.shape[0])) as writer:
-            samples = fold_df.shape[0] # samples = 200
+            print();
+            print('Writing %s TFRecord of fold %i :' % (split, fold))
+        with tf.io.TFRecordWriter('tmp/asvspoof/%s%.2i-%i.tfrec' % (split, fold, fold_df.shape[0])) as writer:
+            samples = fold_df.shape[0]  # samples = 200
             it = tqdm(range(samples)) if show else range(samples)
-            for k in it: # images in fold
-                row = fold_df.iloc[k,:]
+            for k in it:  # images in fold
+                row = fold_df.iloc[k, :]
                 audio, sr = load_audio(row['filepath'])
                 audio_id = row['filename']
                 speaker_id = row['speaker_id']
                 system_id = row['system_id']
                 class_name = row['class_name']
                 target = row['target']
-                example  = train_serialize_example(
-                    tf.audio.encode_wav(audio[...,None],sample_rate=sr),
+                example = train_serialize_example(
+                    tf.audio.encode_wav(audio[..., None], sample_rate=sr),
                     str.encode(audio_id),
                     str.encode(speaker_id),
                     str.encode(system_id),
@@ -283,44 +246,46 @@ def write_tfrecord(df, split='train', show=True):
                 )
                 writer.write(example)
             if show:
-                filepath = 'tmp/asvspoof/%s%.2i-%i.tfrec'%(split,fold,fold_df.shape[0])
+                filepath = 'tmp/asvspoof/%s%.2i-%i.tfrec' % (split, fold, fold_df.shape[0])
                 filename = filepath.split('/')[-1]
-                filesize = os.path.getsize(filepath)/10**6
-                print(filename,':',np.around(filesize, 2),'MB')
+                filesize = os.path.getsize(filepath) / 10 ** 6
+                print(filename, ':', np.around(filesize, 2), 'MB')
+
 
 ## Write tf records if directory tmp does not exist
 def is_directory_empty(directory_path):
     return not os.listdir(directory_path)
+
+
 def tf_records_condition():
-    write_tfrecord(train_df,split='train', show=True)
-    write_tfrecord(valid_df,split='valid', show=True)
-    write_tfrecord(test_df,split='test', show=True)
+    write_tfrecord(train_df, split='train', show=True)
+    write_tfrecord(valid_df, split='valid', show=True)
+    write_tfrecord(test_df, split='test', show=True)
+
 
 directory_path = "tmp/asvspoof"
 if is_directory_empty(directory_path):
     tf_records_condition()
 
 
-
-
-import re, math
-def decode_audio(data, audio_len, target_len=1*16000):
+def decode_audio(data, audio_len, target_len=1 * 16000):
     audio, sr = tf.audio.decode_wav(data)
-    audio = tf.reshape(audio, [audio_len]) # explicit size needed for TPU
+    audio = tf.reshape(audio, [audio_len])  # explicit size needed for TPU
     audio = audio[:target_len]
-    audio = tf.cast(audio,tf.float32)
+    audio = tf.cast(audio, tf.float32)
     # compute min and max
     min_ = tf.reduce_min(audio)
     max_ = tf.reduce_max(audio)
     # normalization
-    audio = (audio - min_) / (max_ - min_) # mean=0 & std=1
+    audio = (audio - min_) / (max_ - min_)  # mean=0 & std=1
     return audio
+
 
 def read_labeled_tfrecord(example):
     LABELED_TFREC_FORMAT = {
-        "audio" : tf.io.FixedLenFeature([], tf.string), # tf.string means bytestring
-        "audio_len" : tf.io.FixedLenFeature([], tf.int64),
-        "target" : tf.io.FixedLenFeature([], tf.int64),
+        "audio": tf.io.FixedLenFeature([], tf.string),  # tf.string means bytestring
+        "audio_len": tf.io.FixedLenFeature([], tf.int64),
+        "target": tf.io.FixedLenFeature([], tf.int64),
     }
     example = tf.io.parse_single_example(example, LABELED_TFREC_FORMAT)
     audio_len = example['audio_len']
@@ -328,93 +293,87 @@ def read_labeled_tfrecord(example):
     target = example['target']
     return audio, target  # returns a dataset of (image, label) pairs
 
+
 def load_dataset(fileids, labeled=True, ordered=False):
     # Read from TFRecords. For optimal performance, reading from multiple files at once and
     # disregarding data order. Order does not matter since we will be shuffling the data anyway.
 
     ignore_order = tf.data.Options()
     if not ordered:
-        ignore_order.experimental_deterministic = False # disable order, increase speed
+        ignore_order.experimental_deterministic = False  # disable order, increase speed
 
-    dataset = tf.data.TFRecordDataset(fileids, num_parallel_reads=AUTO) # automatically interleaves reads from multiple files
-    dataset = dataset.with_options(ignore_order) # uses data as soon as it streams in, rather than in its original order
+    dataset = tf.data.TFRecordDataset(fileids,
+                                      num_parallel_reads=AUTO)  # automatically interleaves reads from multiple files
+    dataset = dataset.with_options(
+        ignore_order)  # uses data as soon as it streams in, rather than in its original order
     dataset = dataset.map(read_labeled_tfrecord)
     # returns a dataset of (image, label) pairs if labeled=True or (image, id) pairs if labeled=False
     return dataset
+
 
 def get_dataset(FILENAMES):
     dataset = load_dataset(FILENAMES, labeled=True)
     #     dataset = dataset.repeat() # the training dataset must repeat for several epochs
     dataset = dataset.shuffle(100, seed=SEED)
     dataset = dataset.batch(BATCH_SIZE)
-    dataset = dataset.prefetch(AUTO) # prefetch next batch while training (autotune prefetch buffer size)
+    dataset = dataset.prefetch(AUTO)  # prefetch next batch while training (autotune prefetch buffer size)
     return dataset
+
 
 def count_data_items(fileids):
     # the number of data items is written in the id of the .tfrec files, i.e. flowers00-230.tfrec = 230 data items
     n = [int(re.compile(r"-([0-9]*)\.").search(fileid).group(1)) for fileid in fileids]
     return np.sum(n)
 
+
 def display_batch(batch, row=2, col=5):
     audios, targets = batch
-    plt.figure(figsize=(col*5, 5*row))
-    for idx in range(row*col):
+    plt.figure(figsize=(col * 5, 5 * row))
+    for idx in range(row * col):
         audio = audios[idx,]
         target = targets[idx,]
-        plt.subplot(row, col, idx+1)
+        plt.subplot(row, col, idx + 1)
         plt.plot(audio, color='r' if target else 'b')
         plt.title('Fake' if target else 'Real', fontsize=15)
     #         plt.xticks([])
     #         plt.yticks([])
     plt.tight_layout()
-    plt.savefig(str(idx))
+    plt.savefig(f'/images/{str(batch)}.png')
     plt.close()
+
 
 BATCH_SIZE = 32
 AUTO = tf.data.experimental.AUTOTUNE
 TRAIN_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/train*.tfrec')
 VALID_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/valid*.tfrec')
 TEST_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/test*.tfrec')
-print('There are %i train, %i valid & %i test images'%(count_data_items(TRAIN_FILENAMES),
-                                                       count_data_items(VALID_FILENAMES),
-                                                       count_data_items(TEST_FILENAMES)))
+print('There are %i train, %i valid & %i test images' % (count_data_items(TRAIN_FILENAMES),
+                                                         count_data_items(VALID_FILENAMES),
+                                                         count_data_items(TEST_FILENAMES)))
 
 ###### Model ########################################################################
 import pandas as pd
 import numpy as np
 import random
 import os
-import shutil
-
 
 import matplotlib.pyplot as plt
+
 plt.rcParams["font.family"] = 'DejaVu Sans'
 import seaborn as sns
-sns.set_style("whitegrid", {'axes.grid' : False})
 
-import tensorflow as tf, re, math
-import tensorflow_addons as tfa
+sns.set_style("whitegrid", {'axes.grid': False})
+
+import tensorflow as tf, re
 import tensorflow.keras.backend as K
 import tensorflow_io as tfio
 import tensorflow_addons as tfa
 import tensorflow_probability as tfp
 
-import yaml
-from IPython import display as ipd
-import json
-from datetime import datetime
-
-from glob import glob
 from tqdm.notebook import tqdm
-import sklearn
-from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
-from sklearn.model_selection import KFold
-from sklearn.metrics import roc_auc_score
-from IPython import display as ipd
+from sklearn.metrics import confusion_matrix
 
 import itertools
-import scipy
-import warnings
 
 # Show less log messages
 tf.get_logger().setLevel('ERROR')
@@ -423,6 +382,7 @@ tf.autograph.set_verbosity(0)
 # Set true to show less logging messages
 os.environ["WANDB_SILENT"] = "true"
 import wandb
+
 
 class CFG:
     wandb = True
@@ -446,18 +406,18 @@ class CFG:
 
     # Audio params
     sample_rate = 16000
-    duration = 3.5 # duration in second
+    duration = 3.5  # duration in second
     audio_len = int(sample_rate * duration)
     normalize = True
 
     # Spectrogram params
-    spec_freq = 128 # freq axis
+    spec_freq = 128  # freq axis
     n_fft = 2048
-    spec_time = 256 # time axis
-    hop_len = audio_len//(spec_time - 1) # non-overlap region
+    spec_time = 256  # time axis
+    hop_len = audio_len // (spec_time - 1)  # non-overlap region
     fmin = 20
-    fmax = sample_rate//2 # max frequency
-    spec_shape = [spec_time, spec_freq] # output spectrogram shape
+    fmax = sample_rate // 2  # max frequency
+    spec_shape = [spec_time, spec_freq]  # output spectrogram shape
 
     # Audio Augmentation
     timeshift_prob = 0.0
@@ -504,32 +464,35 @@ def seeding(SEED):
 
 seeding(CFG.seed)
 
+
 def configure_device():
     try:
         tpu = tf.distribute.cluster_resolver.TPUClusterResolver.connect()  # connect to tpu cluster
-        strategy = tf.distribute.TPUStrategy(tpu) # get strategy for tpu
+        strategy = tf.distribute.TPUStrategy(tpu)  # get strategy for tpu
         print('> Running on TPU ', tpu.master(), end=' | ')
         print('Num of TPUs: ', strategy.num_replicas_in_sync)
-        device='TPU'
-    except: # otherwise detect GPUs
+        device = 'TPU'
+    except:  # otherwise detect GPUs
         tpu = None
-        gpus = tf.config.list_logical_devices('GPU') # get logical gpus
+        gpus = tf.config.list_logical_devices('GPU')  # get logical gpus
         ngpu = len(gpus)
-        if ngpu: # if number of GPUs are 0 then CPU
-            strategy = tf.distribute.MirroredStrategy(gpus) # single-GPU or multi-GPU
+        if ngpu:  # if number of GPUs are 0 then CPU
+            strategy = tf.distribute.MirroredStrategy(gpus)  # single-GPU or multi-GPU
             print("> Running on GPU", end=' | ')
             print("Num of GPUs: ", ngpu)
-            device='GPU'
+            device = 'GPU'
         else:
             print("> Running on CPU")
-            strategy = tf.distribute.get_strategy() # connect to single gpu or cpu
-            device='CPU'
+            strategy = tf.distribute.get_strategy()  # connect to single gpu or cpu
+            device = 'CPU'
     return strategy, device, tpu
+
 
 strategy, CFG.device, tpu = configure_device()
 AUTO = tf.data.experimental.AUTOTUNE
 REPLICAS = strategy.num_replicas_in_sync
 print(f'REPLICAS: {REPLICAS}')
+
 
 def random_int(shape=[], minval=0, maxval=1):
     return tf.random.uniform(shape=shape, minval=minval, maxval=maxval, dtype=tf.int32)
@@ -539,27 +502,30 @@ def random_float(shape=[], minval=0.0, maxval=1.0):
     rnd = tf.random.uniform(shape=shape, minval=minval, maxval=maxval, dtype=tf.float32)
     return rnd
 
+
 # Trim Audio to ignore silent part in the start and end
 def TrimAudio(audio, epsilon=0.15):
-    pos  = tfio.audio.trim(audio, axis=0, epsilon=epsilon)
+    pos = tfio.audio.trim(audio, axis=0, epsilon=epsilon)
     audio = audio[pos[0]:pos[1]]
     return audio
+
 
 # Crop or Pad audio to keep a fixed length
 def CropOrPad(audio, target_len, pad_mode='constant'):
     audio_len = tf.shape(audio)[0]
-    if audio_len < target_len: # if audio_len is smaller than target_len then use Padding
+    if audio_len < target_len:  # if audio_len is smaller than target_len then use Padding
         diff_len = (target_len - audio_len)
-        pad1 = random_int([], minval=0, maxval=diff_len) # select random location for padding
+        pad1 = random_int([], minval=0, maxval=diff_len)  # select random location for padding
         pad2 = diff_len - pad1
         pad_len = [pad1, pad2]
-        audio = tf.pad(audio, paddings=[pad_len], mode=pad_mode) # apply padding
+        audio = tf.pad(audio, paddings=[pad_len], mode=pad_mode)  # apply padding
     elif audio_len > target_len:  # if audio_len is larger than target_len then use Cropping
         diff_len = (audio_len - target_len)
-        idx = tf.random.uniform([], 0, diff_len, dtype=tf.int32) # select random location for cropping
+        idx = tf.random.uniform([], 0, diff_len, dtype=tf.int32)  # select random location for cropping
         audio = audio[idx: (idx + target_len)]
     audio = tf.reshape(audio, [target_len])
     return audio
+
 
 # Randomly shift audio -> any sound at <t> time may get shifted to <t+shift> time
 def TimeShift(audio, prob=0.5):
@@ -570,13 +536,15 @@ def TimeShift(audio, prob=0.5):
         audio = tf.roll(audio, shift, axis=0)
     return audio
 
+
 # Apply random noise to audio data
 def GaussianNoise(audio, std=[0.0025, 0.025], prob=0.5):
     std = random_float([], std[0], std[1])
     if random_float() < prob:
         GN = tf.keras.layers.GaussianNoise(stddev=std)
-        audio = GN(audio, training=True) # training=False don't apply noise to data
+        audio = GN(audio, training=True)  # training=False don't apply noise to data
     return audio
+
 
 # Applies augmentation to Audio Signal
 def AudioAug(audio):
@@ -584,11 +552,13 @@ def AudioAug(audio):
     audio = GaussianNoise(audio, prob=CFG.gn_prob)
     return audio
 
+
 def Normalize(data):
     MEAN = tf.math.reduce_mean(data)
     STD = tf.math.reduce_std(data)
     data = tf.math.divide_no_nan(data - MEAN, STD)
     return data
+
 
 # Randomly mask data in time and freq axis
 def TimeFreqMask(spec, time_mask, freq_mask, prob=0.5):
@@ -597,14 +567,17 @@ def TimeFreqMask(spec, time_mask, freq_mask, prob=0.5):
         spec = tfio.audio.time_mask(spec, param=time_mask)
     return spec
 
+
 # Applies augmentation to Spectrogram
 def SpecAug(spec):
     spec = TimeFreqMask(spec, time_mask=CFG.time_mask, freq_mask=CFG.freq_mask, prob=0.5)
     return spec
 
+
 # Compute MixUp Augmentation for Spectrogram
 def get_mixup(alpha=0.2, prob=0.5):
     """Apply Spectrogram-MixUp augmentaiton. Apply Mixup to one batch and its shifted version"""
+
     def mixup(specs, labels, alpha=alpha, prob=prob):
         if random_float() > prob:
             return specs, labels
@@ -612,16 +585,17 @@ def get_mixup(alpha=0.2, prob=0.5):
         spec_shape = tf.shape(specs)
         label_shape = tf.shape(labels)
 
-        beta = tfp.distributions.Beta(alpha, alpha) # select lambda from beta distribution
+        beta = tfp.distributions.Beta(alpha, alpha)  # select lambda from beta distribution
         lam = beta.sample(1)[0]
 
         # It's faster to roll the batch by one instead of shuffling it to create image pairs
-        specs = lam * specs + (1 - lam) * tf.roll(specs, shift=1, axis=0) # mixup = [1, 2, 3]*lam + [3, 1, 2]*(1 - lam)
+        specs = lam * specs + (1 - lam) * tf.roll(specs, shift=1, axis=0)  # mixup = [1, 2, 3]*lam + [3, 1, 2]*(1 - lam)
         labels = lam * labels + (1 - lam) * tf.roll(labels, shift=1, axis=0)
 
         specs = tf.reshape(specs, spec_shape)
         labels = tf.reshape(labels, label_shape)
         return specs, labels
+
     return mixup
 
 
@@ -629,6 +603,7 @@ def get_cutmix(alpha, prob=0.5):
     """Apply Spectrogram-CutMix augmentaiton which only cuts patch across time axis unline
     typical Computer-Vision CutMix. Apply CutMix to one batch and its shifted version.
     """
+
     def cutmix(specs, labels, alpha=alpha, prob=prob):
         if random_float() > prob:
             return specs, labels
@@ -641,7 +616,7 @@ def get_cutmix(alpha, prob=0.5):
         lam = beta.sample(1)[0]
 
         # It's faster to roll the batch by one instead of shuffling it to create image pairs
-        specs_rolled = tf.roll(specs, shift=1, axis=0) # specs->[1, 2, 3], specs_rolled->[3, 1, 2]
+        specs_rolled = tf.roll(specs, shift=1, axis=0)  # specs->[1, 2, 3], specs_rolled->[3, 1, 2]
         labels_rolled = tf.roll(labels, shift=1, axis=0)
 
         # Select random patch size
@@ -669,63 +644,70 @@ def get_cutmix(alpha, prob=0.5):
         specs = patch1 + patch2  # cutmix img
 
         # Compute lambda = [1 - (patch_area/image_area)]
-        lam = tf.cast((1.0 - (x2 - x1) / (W)),tf.float32)  # no H term as (y1 - y2) = H
+        lam = tf.cast((1.0 - (x2 - x1) / (W)), tf.float32)  # no H term as (y1 - y2) = H
         labels = lam * labels + (1.0 - lam) * labels_rolled  # cutmix label
 
         specs = tf.reshape(specs, spec_shape)
         labels = tf.reshape(labels, label_shape)
 
         return specs, labels
+
     return cutmix
 
+
 # Compute Spectrogram from audio
-def Audio2Spec(audio,spec_shape=[256, 128],sr=16000,nfft=2048,window=2048,fmin=20,fmax=8000):
+def Audio2Spec(audio, spec_shape=[256, 128], sr=16000, nfft=2048, window=2048, fmin=20, fmax=8000):
     spec_time = spec_shape[0]
     spec_freq = spec_shape[1]
     audio_len = tf.shape(audio)[0]
-    hop_length = tf.cast((audio_len // (spec_time - 1)), tf.int32) # compute hop_length to keep desired spec_shape
-    spec = tfio.audio.spectrogram(audio, nfft=nfft, window=window, stride=hop_length) # convert to spectrogram
-    mel_spec = tfio.audio.melscale(spec, rate=sr, mels=spec_freq, fmin=fmin, fmax=fmax) # transform to melscale
-    db_mel_spec = tfio.audio.dbscale(mel_spec, top_db=80) # from power to db (log10) scale
+    hop_length = tf.cast((audio_len // (spec_time - 1)), tf.int32)  # compute hop_length to keep desired spec_shape
+    spec = tfio.audio.spectrogram(audio, nfft=nfft, window=window, stride=hop_length)  # convert to spectrogram
+    mel_spec = tfio.audio.melscale(spec, rate=sr, mels=spec_freq, fmin=fmin, fmax=fmax)  # transform to melscale
+    db_mel_spec = tfio.audio.dbscale(mel_spec, top_db=80)  # from power to db (log10) scale
     if tf.shape(db_mel_spec)[0] > spec_time:  # check if we have desiered shape
-        db_mel_spec = db_mel_spec[:spec_time,:]
+        db_mel_spec = db_mel_spec[:spec_time, :]
     db_mel_spec = tf.reshape(db_mel_spec, spec_shape)
     return db_mel_spec
+
 
 # Convert spectrogram (H,W) to image (H,W,1)
 def Spec2Img(spec, num_channels=1):
     # 1 channel image
     img = spec[..., tf.newaxis]
     # Copy same image across channel axis
-    if num_channels>1:
+    if num_channels > 1:
         img = tf.tile(img, [1, 1, num_channels])
     return img
+
 
 # Decode audio from wav
 def decode_audio(data, audio_len):
     # Decode
     audio, sr = tf.audio.decode_wav(data)
-    audio = tf.reshape(audio, [audio_len]) # explicit size needed for TPU
-    audio = tf.cast(audio,tf.float32)
+    audio = tf.reshape(audio, [audio_len])  # explicit size needed for TPU
+    audio = tf.cast(audio, tf.float32)
     # Normalization
     if CFG.normalize:
         audio = Normalize(audio)
     return audio
+
 
 # Decode label
 def decode_label(label):
     label = tf.cast(label, tf.float32)
     return label
 
+
 # Read tfrecord data & parse it & do augmentation
-def read_tfrecord(example, augment=True, return_id=False, return_label=True, target_len=CFG.audio_len, spec_shape=CFG.spec_shape):
+def read_tfrecord(example, augment=True, return_id=False, return_label=True, target_len=CFG.audio_len,
+                  spec_shape=CFG.spec_shape):
     tfrec_format = {
-        "audio" : tf.io.FixedLenFeature([], tf.string), # tf.string means bytestring
-        "id" : tf.io.FixedLenFeature([], tf.string),
+        "audio": tf.io.FixedLenFeature([], tf.string),  # tf.string means bytestring
+        "id": tf.io.FixedLenFeature([], tf.string),
         "speaker_id": tf.io.FixedLenFeature([], tf.string),
-        "system_id" : tf.io.FixedLenFeature([], tf.string),
-        "audio_len" : tf.io.FixedLenFeature([], tf.int64),
-        "target" : tf.io.FixedLenFeature([], tf.int64),
+        "system_id": tf.io.FixedLenFeature([], tf.string),
+        "audio_len": tf.io.FixedLenFeature([], tf.int64),
+        "target": tf.io.FixedLenFeature([], tf.int64),
     }
     # Parses a single example proto.
     example = tf.io.parse_single_example(
@@ -736,7 +718,7 @@ def read_tfrecord(example, augment=True, return_id=False, return_label=True, tar
     audio_len = example["audio_len"]
     # Decoding
     audio = decode_audio(example["audio"], audio_len)  # decode audio from .wav
-    target = decode_label(example["target"]) # decode label -> type cast
+    target = decode_label(example["target"])  # decode label -> type cast
     # Trim Audio
     audio = TrimAudio(audio)
     # Crop or Pad audio to keep a fixed length
@@ -797,26 +779,27 @@ def get_dataset(
                                                   augment=augment,
                                                   return_id=return_id,
                                                   return_label=return_label,
-                                                  target_len=target_len,),
-                          num_parallel_calls=AUTO,)
+                                                  target_len=target_len, ),
+                          num_parallel_calls=AUTO, )
     # Batch Data Samples
     dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
     # MixUp
     if CFG.mixup_prob and augment and return_label:
-        dataset = dataset.map(get_mixup(alpha=CFG.mixup_alpha,prob=CFG.mixup_prob),num_parallel_calls=AUTO)
+        dataset = dataset.map(get_mixup(alpha=CFG.mixup_alpha, prob=CFG.mixup_prob), num_parallel_calls=AUTO)
     # CutMix
     if CFG.cutmix_prob and augment and return_label:
-        dataset = dataset.map(get_cutmix(alpha=CFG.cutmix_alpha,prob=CFG.cutmix_prob),num_parallel_calls=AUTO)
+        dataset = dataset.map(get_cutmix(alpha=CFG.cutmix_alpha, prob=CFG.cutmix_prob), num_parallel_calls=AUTO)
     # Prefatch data for speedup
     dataset = dataset.prefetch(AUTO)
     return dataset
+
 
 def plot_confusion_matrix(cm,
                           classes,
                           normalize=False,
                           title='Confusion matrix',
                           cmap=plt.cm.Blues,
-                          save = True):
+                          save=True):
     """Plot Confusion Matrix"""
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
@@ -843,6 +826,7 @@ def plot_confusion_matrix(cm,
     plt.savefig('images/cm.png')
     plt.close()
     return
+
 
 def plot_history(history):
     """Plot model training history"""
@@ -895,14 +879,15 @@ def plot_history(history):
     plt.savefig(f"history_plot.png")
     return
 
+
 def display_batch(batch, row=2, col=5):
     "Plot one batch data"
     imgs, tars = batch
-    plt.figure(figsize=(5.0*col, 3.5*row))
-    for idx in range(row*col):
+    plt.figure(figsize=(5.0 * col, 3.5 * row))
+    for idx in range(row * col):
         img = imgs[idx].numpy().transpose()[0]
         tar = tars[idx].numpy()
-        plt.subplot(row, col, idx+1)
+        plt.subplot(row, col, idx + 1)
         text = 'Fake' if tar else 'Real'
         plt.title(text, fontsize=15, color=('red' if tar else 'green'))
         plt.tight_layout()
@@ -949,15 +934,16 @@ def get_metrics():
 
 import math
 
+
 def get_lr_callback(mode='exp', batch_size=64, epochs=30, plot=False):
     """adapted from @cdeotte"""
     lr_start = 5e-5
-    lr = 0.001 # base_lr
-    lr_max = 5e-4 # max lr - will be multiplied by batch_size
-    lr_min = 0.1e-4 # min lr
-    lr_ramp_ep = 4 # warming up epochs
-    lr_sus_ep = 0 # sustain epochs lr after warming up
-    lr_decay = 0.8 # decay rate
+    lr = 0.001  # base_lr
+    lr_max = 5e-4  # max lr - will be multiplied by batch_size
+    lr_min = 0.1e-4  # min lr
+    lr_ramp_ep = 4  # warming up epochs
+    lr_sus_ep = 0  # sustain epochs lr after warming up
+    lr_decay = 0.8  # decay rate
 
     def lrfn(epoch):
         if epoch < lr_ramp_ep:
@@ -967,11 +953,11 @@ def get_lr_callback(mode='exp', batch_size=64, epochs=30, plot=False):
             lr = lr_max
 
         elif mode == 'exp':
-            lr = (lr_max - lr_min) * lr_decay**(epoch - \
-                                                lr_ramp_ep - lr_sus_ep) + lr_min
+            lr = (lr_max - lr_min) * lr_decay ** (epoch - \
+                                                  lr_ramp_ep - lr_sus_ep) + lr_min
 
         elif mode == 'step':
-            lr = lr_max * lr_decay**((epoch - lr_ramp_ep - lr_sus_ep) // 2)
+            lr = lr_max * lr_decay ** ((epoch - lr_ramp_ep - lr_sus_ep) // 2)
 
         elif mode == 'cosine':
             decay_total_epochs = epochs - lr_ramp_ep - lr_sus_ep + 3
@@ -991,27 +977,29 @@ def get_lr_callback(mode='exp', batch_size=64, epochs=30, plot=False):
     return tf.keras.callbacks.LearningRateScheduler(lrfn, verbose=0)
 
 
-lr_callback = get_lr_callback(mode=CFG.lr_schedule,epochs=30,plot=True)
+lr_callback = get_lr_callback(mode=CFG.lr_schedule, epochs=30, plot=True)
 
 import audio_classification_models as acm
 
 URL = 'https://github.com/awsaf49/audio_classification_models/releases/download/v1.0.8/conformer-encoder.h5'
 
-def Conformer(input_shape=(128, 80, 1),num_classes=1, final_activation='sigmoid', pretrain=True):
+
+def Conformer(input_shape=(128, 80, 1), num_classes=1, final_activation='sigmoid', pretrain=True):
     """Souce Code: https://github.com/awsaf49/audio_classification_models"""
     inp = tf.keras.layers.Input(shape=input_shape)
     backbone = acm.ConformerEncoder()
     out = backbone(inp)
     if pretrain:
-        acm.utils.weights.load_pretrain(backbone, url=URL, fname = 'conformer-encoder.h5')
+        acm.utils.weights.load_pretrain(backbone, url=URL, fname='conformer-encoder.h5')
     out = tf.keras.layers.GlobalAveragePooling1D()(out)
     #     out = tf.keras.layers.Dense(32, activation='selu')(out)
     out = tf.keras.layers.Dense(num_classes, activation=final_activation)(out)
     model = tf.keras.models.Model(inp, out)
     return model
 
-def get_model(name=CFG.model_name, loss=CFG.loss,):
-    model = Conformer(input_shape=[*CFG.spec_shape,1],pretrain=True)
+
+def get_model(name=CFG.model_name, loss=CFG.loss, ):
+    model = Conformer(input_shape=[*CFG.spec_shape, 1], pretrain=True)
     lr = CFG.lr
     if CFG.optimizer == "Adam":
         opt = tf.keras.optimizers.Adam(learning_rate=lr)
@@ -1024,13 +1012,14 @@ def get_model(name=CFG.model_name, loss=CFG.loss,):
     model.compile(
         optimizer=opt,
         loss=loss,
-        steps_per_execution=CFG.steps_per_execution, # to reduce idle time
+        steps_per_execution=CFG.steps_per_execution,  # to reduce idle time
         metrics=get_metrics()
     )
     return model
 
 
 import sys
+
 model = get_model()
 model.summary()
 output_file = "model_summary.txt"
@@ -1040,12 +1029,12 @@ with open(output_file, 'w') as f:
     model.summary()  # Output will be written to the file instead of the console
     sys.stdout = sys.__stdout__  # Reset the standard output back to the console
 
-
 if CFG.wandb:
     "login in wandb otherwise run anonymously"
     try:
         # Addo-ons > Secrets > WANDB
         from kaggle_secrets import UserSecretsClient
+
         user_secrets = UserSecretsClient()
         api_key = user_secrets.get_secret("WANDB")
         wandb.login(key=api_key)
@@ -1056,8 +1045,8 @@ if CFG.wandb:
 
 def wandb_init():
     "initialize project on wandb"
-    id_ = wandb.util.generate_id() # generate random id
-    config = {k: v for k, v in dict(vars(CFG)).items() if "__" not in k} # convert class to dict
+    id_ = wandb.util.generate_id()  # generate random id
+    config = {k: v for k, v in dict(vars(CFG)).items() if "__" not in k}  # convert class to dict
     config["id"] = id_
     run = wandb.init(
         id=id_,
@@ -1070,6 +1059,7 @@ def wandb_init():
         resume="allow",
     )
     return run
+
 
 # Initialize wandb Run
 if CFG.wandb:
@@ -1121,7 +1111,7 @@ if CFG.wandb:
 # Build model in device
 K.clear_session()
 with strategy.scope():
-    model = get_model(name=CFG.model_name,loss=CFG.loss)
+    model = get_model(name=CFG.model_name, loss=CFG.loss)
 
 # Callbacks
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
@@ -1132,7 +1122,7 @@ checkpoint = tf.keras.callbacks.ModelCheckpoint(
     save_best_only=True,
     save_weights_only=True,
 )
-callbacks = [checkpoint, get_lr_callback(mode=CFG.lr_schedule,epochs=CFG.epochs)]
+callbacks = [checkpoint, get_lr_callback(mode=CFG.lr_schedule, epochs=CFG.epochs)]
 
 if CFG.wandb:
     # Include w&b callback if WANDB is True
@@ -1171,14 +1161,14 @@ history = model.fit(
 history = pd.DataFrame(history.history)
 
 # Load best weights
-model.load_weights("/kaggle/working/ckpt.h5")
+model.load_weights("checkpoints/ckpt.h5")
 
 # Plot Training History
 if CFG.display_plot:
     plot_history(history)
 
 # Load best weights
-model.load_weights("/kaggle/working/ckpt.h5")
+model.load_weights("checkpoints/ckpt.h5")
 
 # Compute & save best Test result
 print("\n>> Valid Result:")
@@ -1215,9 +1205,9 @@ print()
 # Log in wandb
 if CFG.wandb:
     best_epoch = np.argmax(history["val_f1_score"]) + 1
-    wandb.log({"best": {"valid":valid_result,
-                        "test":test_result,
-                        "epoch":best_epoch}})
+    wandb.log({"best": {"valid": valid_result,
+                        "test": test_result,
+                        "epoch": best_epoch}})
     wandb.run.finish()
 
 # Get Prediction for test data
@@ -1231,7 +1221,7 @@ test_ds = get_dataset(TEST_FILENAMES,
                       return_id=False,
                       return_label=False,
                       )
-test_preds = model.predict(test_ds, verbose=1, steps=NUM_TEST/BATCH_SIZE)
+test_preds = model.predict(test_ds, verbose=1, steps=NUM_TEST / BATCH_SIZE)
 
 # Extract test metadata from tfrecord
 test_ds = get_dataset(TEST_FILENAMES,
@@ -1244,13 +1234,13 @@ test_ds = get_dataset(TEST_FILENAMES,
                       return_id=True,
                       return_label=True,
                       )
-info = [(id_.numpy()[0].decode('utf-8'),label.numpy()[0]) for _,label,id_ in tqdm(iter(test_ds),total=NUM_TEST)]
+info = [(id_.numpy()[0].decode('utf-8'), label.numpy()[0]) for _, label, id_ in tqdm(iter(test_ds), total=NUM_TEST)]
 test_ids, test_labels = list(zip(*info))
 
 # Plot Confusion Matrix
 cm = confusion_matrix(test_labels, test_preds.reshape(-1).round())
-plt.figure(figsize=(6,6))
-plot_confusion_matrix(cm, ["Real","Fake"],normalize=True)
+plt.figure(figsize=(6, 6))
+plot_confusion_matrix(cm, ["Real", "Fake"], normalize=True)
 plt.tight_layout()
 plt.gcf()
 plt.savefig('images/cm.png')
