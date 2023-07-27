@@ -909,10 +909,12 @@ def display_batch(batch, row=2, col=5):
 ds = get_dataset(TRAIN_FILENAMES[:2], augment=False, cache=False, repeat=False).take(1)
 batch = next(iter(ds.unbatch().batch(20)))
 imgs, tars = batch
-print(f'image_shape: {imgs.shape} target_shape:{tars.shape}')
-print(f'image_dtype: {imgs.dtype} target_dtype:{tars.dtype}')
+# print(f'image_shape: {imgs.shape} target_shape:{tars.shape}')
+# print(f'image_dtype: {imgs.dtype} target_dtype:{tars.dtype}')
 display_batch(batch, row=3, col=3)
-
+plt.tight_layout()
+plt.savefig(str(batch))
+plt.close()
 
 ds = get_dataset(TRAIN_FILENAMES[:2], augment=True, cache=False, repeat=False).take(1)
 batch = next(iter(ds.unbatch().batch(20)))
@@ -920,5 +922,7 @@ imgs, tars = batch
 # print(f'image_shape: {imgs.shape} target_shape:{tars.shape}')
 # print(f'image_dtype: {imgs.dtype} target_dtype:{tars.dtype}')
 display_batch(batch, row=3, col=3)
-
+plt.tight_layout()
+plt.savefig(str(batch))
+plt.close()
 
