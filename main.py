@@ -882,8 +882,9 @@ def plot_history(history):
     plt.text(x - 0.03 * xdist, y + 0.05 * ydist, "min loss", size=14)
     plt.ylabel("Loss", size=14)
     plt.legend(loc=3)
-    plt.savefig(f"history_plot.png")
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(str(history))
+    plt.close()
     return
 
 def display_batch(batch, row=2, col=5):
