@@ -1024,9 +1024,16 @@ def get_model(name=CFG.model_name, loss=CFG.loss,):
         metrics=get_metrics()
     )
     return model
-
+import sys
 model = get_model()
 model.summary()
+output_file = "model_summary.txt"
+# Redirect the standard output to the file
+with open(output_file, 'w') as f:
+    sys.stdout = f  # Set the standard output to the file
+    model.summary()  # Output will be written to the file instead of the console
+    sys.stdout = sys.__stdout__  # Reset the standard output back to the console
+
 
 if CFG.wandb:
     "login in wandb otherwise run anonymously"
@@ -1086,14 +1093,14 @@ NUM_TEST = count_data_items(TEST_FILENAMES)
 BATCH_SIZE = CFG.batch_size * REPLICAS
 STEPS_PER_EPOCH = NUM_TRAIN // BATCH_SIZE
 
-print("#" * 60)
-print("#### IMAGE_SIZE: (%i, %i) | BATCH_SIZE: %i | EPOCHS: %i"% (CFG.spec_shape[0],
-                                                                  CFG.spec_shape[1],
-                                                                  BATCH_SIZE,
-                                                                  CFG.epochs))
-print("#### MODEL: %s | LOSS: %s"% (CFG.model_name, CFG.loss))
-print("#### NUM_TRAIN: {:,} | NUM_VALID: {:,}".format(NUM_TRAIN, NUM_VALID))
-print("#" * 60)
+# print("#" * 60)
+# print("#### IMAGE_SIZE: (%i, %i) | BATCH_SIZE: %i | EPOCHS: %i"% (CFG.spec_shape[0],
+#                                                                   CFG.spec_shape[1],
+#                                                                   BATCH_SIZE,
+#                                                                   CFG.epochs))
+# print("#### MODEL: %s | LOSS: %s"% (CFG.model_name, CFG.loss))
+# print("#### NUM_TRAIN: {:,} | NUM_VALID: {:,}".format(NUM_TRAIN, NUM_VALID))
+# print("#" * 60)
 
 # Log in w&B before training
 if CFG.wandb:
