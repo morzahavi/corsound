@@ -1006,7 +1006,7 @@ def Conformer(input_shape=(128, 80, 1),num_classes=1, final_activation='sigmoid'
     backbone = acm.ConformerEncoder()
     out = backbone(inp)
     if pretrain:
-        acm.utils.weights.load_pretrain(backbone, url=URL, fname = 'conformer-encoder.h5')
+        acm.utils.weights.load_pretrain(backbone, url=URL, fname = 'checkpoints/conformer-encoder.h5')
     out = tf.keras.layers.GlobalAveragePooling1D()(out)
     #     out = tf.keras.layers.Dense(32, activation='selu')(out)
     out = tf.keras.layers.Dense(num_classes, activation=final_activation)(out)
@@ -1128,7 +1128,7 @@ with strategy.scope():
 
 # Callbacks
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
-    "checkpoints/ckpt.h5",
+    "checkpoints/conformer-encoder.h5",
     verbose=CFG.verbose,
     monitor="val_f1_score",
     mode="max",
@@ -1174,14 +1174,14 @@ history = model.fit(
 history = pd.DataFrame(history.history)
 
 # Load best weights
-model.load_weights("checkpoints/ckpt.h5")
+model.load_weights("checkpoints/conformer-encoder.h5")
 
 # Plot Training History
 if CFG.display_plot:
     plot_history(history)
 
 # Load best weights
-model.load_weights("checkpoints/ckpt.h5")
+model.load_weights("checkpoints/conformer-encoder.h5")
 
 # Compute & save best Test result
 print("\n>> Valid Result:")
