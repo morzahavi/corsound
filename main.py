@@ -1156,6 +1156,16 @@ valid_ds = get_dataset(
     drop_remainder=False,
 )
 
+# Train model
+history = model.fit(
+    train_ds,
+    epochs=CFG.epochs if not CFG.debug else 2,
+    steps_per_epoch=STEPS_PER_EPOCH,
+    callbacks=callbacks,
+    validation_data=valid_ds,
+    #         validation_steps = NUM_VALID/BATCH_SIZE,
+    verbose=CFG.verbose,
+)
 
 # Convert dict history to df history
 history = pd.DataFrame(history.history)
