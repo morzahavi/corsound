@@ -38,12 +38,12 @@ import itertools
 import scipy
 import warnings
 
-import rasterio as rio
-import folium
-
-import ee
-from kaggle_secrets import UserSecretsClient
-from google.oauth2.credentials import Credentials
+# import rasterio as rio
+# import folium
+#
+# import ee
+# from kaggle_secrets import UserSecretsClient
+# from google.oauth2.credentials import Credentials
 
 # Show less log messages
 tf.get_logger().setLevel('ERROR')
