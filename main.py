@@ -192,7 +192,7 @@ train_df = pd.read_csv(f'asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.L
                        sep=" ", header=None)
 train_df.columns =['speaker_id','filename','system_id','null','class_name']
 train_df.drop(columns=['null'],inplace=True)
-train_df['filepath'] = f'{BASE_PATH}/ASVspoof2019_LA_train/flac/'+train_df.filename+'.flac'
+train_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_train/flac/'+train_df.filename+'.flac'
 train_df['target'] = (train_df.class_name=='spoof').astype('int32') # set labels 1 for fake and 0 for real
 if DEBUG:
     train_df = train_df.groupby(['target']).sample(2500).reset_index(drop=True)
