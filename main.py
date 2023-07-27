@@ -832,6 +832,7 @@ def plot_confusion_matrix(cm,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.grid(False)
+    plt.gcf()
     plt.savefig('cm.png')
     plt.close()
     return
@@ -885,6 +886,7 @@ def plot_history(history):
     plt.ylabel("Loss", size=14)
     plt.legend(loc=3)
     plt.tight_layout()
+    plt.gcf()
     plt.savefig(f'{str(history)}.png')
     plt.close()
     return
@@ -900,10 +902,12 @@ def display_batch(batch, row=2, col=5):
         text = 'Fake' if tar else 'Real'
         plt.title(text, fontsize=15, color=('red' if tar else 'green'))
         plt.tight_layout()
+        plt.gcf()
         plt.savefig(f'{str(idx)}.png')
         plt.close()
     plt.grid(False)
     plt.tight_layout()
+    plt.gcf()
     plt.savefig(f'{str(batch)}.png')
     plt.close()
     return
