@@ -1036,218 +1036,218 @@ with open(output_file, 'w') as f:
     model.summary()  # Output will be written to the file instead of the console
     sys.stdout = sys.__stdout__  # Reset the standard output back to the console
 
-#
-# if CFG.wandb:
-#     "login in wandb otherwise run anonymously"
-#     try:
-#         # Addo-ons > Secrets > WANDB
-#         from kaggle_secrets import UserSecretsClient
-#         user_secrets = UserSecretsClient()
-#         api_key = user_secrets.get_secret("WANDB")
-#         wandb.login(key=api_key)
-#         anonymous = None
-#     except:
-#         anonymous = "must"
-#
-#
-# def wandb_init():
-#     "initialize project on wandb"
-#     id_ = wandb.util.generate_id() # generate random id
-#     config = {k: v for k, v in dict(vars(CFG)).items() if "__" not in k} # convert class to dict
-#     config["id"] = id_
-#     run = wandb.init(
-#         id=id_,
-#         project="fake-speech-detection",
-#         name=f"dim-{CFG.spec_shape[0]}x{CFG.spec_shape[1]}|model-{CFG.model_name}",
-#         config=config,
-#         anonymous=anonymous,
-#         group=CFG.comment,
-#         reinit=True,
-#         resume="allow",
-#     )
-#     return run
-#
-# # Initialize wandb Run
-# if CFG.wandb:
-#     run = wandb_init()
-#     WandbCallback = wandb.keras.WandbCallback(save_model=False)
-#
-# # Load gcs_path of train, valid & test
-# TRAIN_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/train*.tfrec')
-# VALID_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/valid*.tfrec')
-# TEST_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/test*.tfrec')
-#
-# # Take Only 10 Files if run in Debug Mode
-# if CFG.debug:
-#     TRAIN_FILENAMES = TRAIN_FILENAMES[:2]
-#     VALID_FILENAMES = VALID_FILENAMES[:2]
-#     TEST_FILENAMES = TEST_FILENAMES[:2]
-#
-# # Shuffle train files
-# random.shuffle(TRAIN_FILENAMES)
-#
-# # Count train and valid samples
-# NUM_TRAIN = count_data_items(TRAIN_FILENAMES)
-# NUM_VALID = count_data_items(VALID_FILENAMES)
-# NUM_TEST = count_data_items(TEST_FILENAMES)
-#
-# # Compute batch size & steps_per_epoch
-# BATCH_SIZE = CFG.batch_size * REPLICAS
-# STEPS_PER_EPOCH = NUM_TRAIN // BATCH_SIZE
-#
-# # print("#" * 60)
-# # print("#### IMAGE_SIZE: (%i, %i) | BATCH_SIZE: %i | EPOCHS: %i"% (CFG.spec_shape[0],
-# #                                                                   CFG.spec_shape[1],
-# #                                                                   BATCH_SIZE,
-# #                                                                   CFG.epochs))
-# # print("#### MODEL: %s | LOSS: %s"% (CFG.model_name, CFG.loss))
-# # print("#### NUM_TRAIN: {:,} | NUM_VALID: {:,}".format(NUM_TRAIN, NUM_VALID))
-# # print("#" * 60)
-#
-# # Log in w&B before training
-# if CFG.wandb:
-#     wandb.log(
-#         {
-#             "num_train": NUM_TRAIN,
-#             "num_valid": NUM_VALID,
-#             "num_test": NUM_TEST,
-#         }
-#     )
-#
-# # Build model in device
-# K.clear_session()
-# with strategy.scope():
-#     model = get_model(name=CFG.model_name,loss=CFG.loss)
-#
-# # Callbacks
-# checkpoint = tf.keras.callbacks.ModelCheckpoint(
-#     "/kaggle/working/ckpt.h5",
-#     verbose=CFG.verbose,
-#     monitor="val_f1_score",
-#     mode="max",
-#     save_best_only=True,
-#     save_weights_only=True,
-# )
-# callbacks = [checkpoint, get_lr_callback(mode=CFG.lr_schedule,epochs=CFG.epochs)]
-#
-# if CFG.wandb:
-#     # Include w&b callback if WANDB is True
-#     callbacks.append(WandbCallback)
-#
-# # Create train & valid dataset
-# train_ds = get_dataset(
-#     TRAIN_FILENAMES,
-#     augment=CFG.augment,
-#     batch_size=BATCH_SIZE,
-#     cache=False,
-#     drop_remainder=False,
-# )
-# valid_ds = get_dataset(
-#     VALID_FILENAMES,
-#     shuffle=False,
-#     augment=False,
-#     repeat=False,
-#     batch_size=BATCH_SIZE,
-#     cache=False,
-#     drop_remainder=False,
-# )
-#
-# # Train model
-# history = model.fit(
-#     train_ds,
-#     epochs=CFG.epochs if not CFG.debug else 2,
-#     steps_per_epoch=STEPS_PER_EPOCH,
-#     callbacks=callbacks,
-#     validation_data=valid_ds,
-#     #         validation_steps = NUM_VALID/BATCH_SIZE,
-#     verbose=CFG.verbose,
-# )
-#
-# # Convert dict history to df history
-# history = pd.DataFrame(history.history)
-#
-# # Load best weights
-# model.load_weights("/kaggle/working/ckpt.h5")
-#
-# # Plot Training History
-# if CFG.display_plot:
-#     plot_history(history)
-#
-# # Load best weights
-# model.load_weights("/kaggle/working/ckpt.h5")
-#
-# # Compute & save best Test result
-# print("\n>> Valid Result:")
-# valid_result = model.evaluate(
-#     get_dataset(
-#         VALID_FILENAMES,
-#         batch_size=BATCH_SIZE,
-#         augment=False,
-#         shuffle=False,
-#         repeat=False,
-#         cache=False,
-#     ),
-#     return_dict=True,
-#     verbose=1,
-# )
-# print()
-#
-# # Compute & save best Test result
-# print("\n>> Test Result:")
-# test_result = model.evaluate(
-#     get_dataset(
-#         TEST_FILENAMES,
-#         batch_size=BATCH_SIZE,
-#         augment=False,
-#         shuffle=False,
-#         repeat=False,
-#         cache=False,
-#     ),
-#     return_dict=True,
-#     verbose=1,
-# )
-# print()
-#
-# # Log in wandb
-# if CFG.wandb:
-#     best_epoch = np.argmax(history["val_f1_score"]) + 1
-#     wandb.log({"best": {"valid":valid_result,
-#                         "test":test_result,
-#                         "epoch":best_epoch}})
-#     wandb.run.finish()
-#
-# # Get Prediction for test data
-# test_ds = get_dataset(TEST_FILENAMES,
-#                       shuffle=False,
-#                       augment=False,
-#                       repeat=False,
-#                       batch_size=BATCH_SIZE,
-#                       cache=False,
-#                       drop_remainder=False,
-#                       return_id=False,
-#                       return_label=False,
-#                       )
-# test_preds = model.predict(test_ds, verbose=1, steps=NUM_TEST/BATCH_SIZE)
-#
-# # Extract test metadata from tfrecord
-# test_ds = get_dataset(TEST_FILENAMES,
-#                       shuffle=False,
-#                       augment=False,
-#                       repeat=False,
-#                       batch_size=1,
-#                       cache=False,
-#                       drop_remainder=False,
-#                       return_id=True,
-#                       return_label=True,
-#                       )
-# info = [(id_.numpy()[0].decode('utf-8'),label.numpy()[0]) for _,label,id_ in tqdm(iter(test_ds),total=NUM_TEST)]
-# test_ids, test_labels = list(zip(*info))
-#
-# # Plot Confusion Matrix
-# cm = confusion_matrix(test_labels, test_preds.reshape(-1).round())
-# plt.figure(figsize=(6,6))
-# plot_confusion_matrix(cm, ["Real","Fake"],normalize=True)
-# plt.tight_layout()
-# plt.gcf()
-# plt.savefig('images/cm.png')
-# plt.close()
+
+if CFG.wandb:
+    "login in wandb otherwise run anonymously"
+    try:
+        # Addo-ons > Secrets > WANDB
+        from kaggle_secrets import UserSecretsClient
+        user_secrets = UserSecretsClient()
+        api_key = user_secrets.get_secret("WANDB")
+        wandb.login(key=api_key)
+        anonymous = None
+    except:
+        anonymous = "must"
+
+
+def wandb_init():
+    "initialize project on wandb"
+    id_ = wandb.util.generate_id() # generate random id
+    config = {k: v for k, v in dict(vars(CFG)).items() if "__" not in k} # convert class to dict
+    config["id"] = id_
+    run = wandb.init(
+        id=id_,
+        project="fake-speech-detection",
+        name=f"dim-{CFG.spec_shape[0]}x{CFG.spec_shape[1]}|model-{CFG.model_name}",
+        config=config,
+        anonymous=anonymous,
+        group=CFG.comment,
+        reinit=True,
+        resume="allow",
+    )
+    return run
+
+# Initialize wandb Run
+if CFG.wandb:
+    run = wandb_init()
+    WandbCallback = wandb.keras.WandbCallback(save_model=False)
+
+# Load gcs_path of train, valid & test
+TRAIN_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/train*.tfrec')
+VALID_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/valid*.tfrec')
+TEST_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/test*.tfrec')
+
+# Take Only 10 Files if run in Debug Mode
+if CFG.debug:
+    TRAIN_FILENAMES = TRAIN_FILENAMES[:2]
+    VALID_FILENAMES = VALID_FILENAMES[:2]
+    TEST_FILENAMES = TEST_FILENAMES[:2]
+
+# Shuffle train files
+random.shuffle(TRAIN_FILENAMES)
+
+# Count train and valid samples
+NUM_TRAIN = count_data_items(TRAIN_FILENAMES)
+NUM_VALID = count_data_items(VALID_FILENAMES)
+NUM_TEST = count_data_items(TEST_FILENAMES)
+
+# Compute batch size & steps_per_epoch
+BATCH_SIZE = CFG.batch_size * REPLICAS
+STEPS_PER_EPOCH = NUM_TRAIN // BATCH_SIZE
+
+# print("#" * 60)
+# print("#### IMAGE_SIZE: (%i, %i) | BATCH_SIZE: %i | EPOCHS: %i"% (CFG.spec_shape[0],
+#                                                                   CFG.spec_shape[1],
+#                                                                   BATCH_SIZE,
+#                                                                   CFG.epochs))
+# print("#### MODEL: %s | LOSS: %s"% (CFG.model_name, CFG.loss))
+# print("#### NUM_TRAIN: {:,} | NUM_VALID: {:,}".format(NUM_TRAIN, NUM_VALID))
+# print("#" * 60)
+
+# Log in w&B before training
+if CFG.wandb:
+    wandb.log(
+        {
+            "num_train": NUM_TRAIN,
+            "num_valid": NUM_VALID,
+            "num_test": NUM_TEST,
+        }
+    )
+
+# Build model in device
+K.clear_session()
+with strategy.scope():
+    model = get_model(name=CFG.model_name,loss=CFG.loss)
+
+# Callbacks
+checkpoint = tf.keras.callbacks.ModelCheckpoint(
+    "/kaggle/working/ckpt.h5",
+    verbose=CFG.verbose,
+    monitor="val_f1_score",
+    mode="max",
+    save_best_only=True,
+    save_weights_only=True,
+)
+callbacks = [checkpoint, get_lr_callback(mode=CFG.lr_schedule,epochs=CFG.epochs)]
+
+if CFG.wandb:
+    # Include w&b callback if WANDB is True
+    callbacks.append(WandbCallback)
+
+# Create train & valid dataset
+train_ds = get_dataset(
+    TRAIN_FILENAMES,
+    augment=CFG.augment,
+    batch_size=BATCH_SIZE,
+    cache=False,
+    drop_remainder=False,
+)
+valid_ds = get_dataset(
+    VALID_FILENAMES,
+    shuffle=False,
+    augment=False,
+    repeat=False,
+    batch_size=BATCH_SIZE,
+    cache=False,
+    drop_remainder=False,
+)
+
+# Train model
+history = model.fit(
+    train_ds,
+    epochs=CFG.epochs if not CFG.debug else 2,
+    steps_per_epoch=STEPS_PER_EPOCH,
+    callbacks=callbacks,
+    validation_data=valid_ds,
+    #         validation_steps = NUM_VALID/BATCH_SIZE,
+    verbose=CFG.verbose,
+)
+
+# Convert dict history to df history
+history = pd.DataFrame(history.history)
+
+# Load best weights
+model.load_weights("/kaggle/working/ckpt.h5")
+
+# Plot Training History
+if CFG.display_plot:
+    plot_history(history)
+
+# Load best weights
+model.load_weights("/kaggle/working/ckpt.h5")
+
+# Compute & save best Test result
+print("\n>> Valid Result:")
+valid_result = model.evaluate(
+    get_dataset(
+        VALID_FILENAMES,
+        batch_size=BATCH_SIZE,
+        augment=False,
+        shuffle=False,
+        repeat=False,
+        cache=False,
+    ),
+    return_dict=True,
+    verbose=1,
+)
+print()
+
+# Compute & save best Test result
+print("\n>> Test Result:")
+test_result = model.evaluate(
+    get_dataset(
+        TEST_FILENAMES,
+        batch_size=BATCH_SIZE,
+        augment=False,
+        shuffle=False,
+        repeat=False,
+        cache=False,
+    ),
+    return_dict=True,
+    verbose=1,
+)
+print()
+
+# Log in wandb
+if CFG.wandb:
+    best_epoch = np.argmax(history["val_f1_score"]) + 1
+    wandb.log({"best": {"valid":valid_result,
+                        "test":test_result,
+                        "epoch":best_epoch}})
+    wandb.run.finish()
+
+# Get Prediction for test data
+test_ds = get_dataset(TEST_FILENAMES,
+                      shuffle=False,
+                      augment=False,
+                      repeat=False,
+                      batch_size=BATCH_SIZE,
+                      cache=False,
+                      drop_remainder=False,
+                      return_id=False,
+                      return_label=False,
+                      )
+test_preds = model.predict(test_ds, verbose=1, steps=NUM_TEST/BATCH_SIZE)
+
+# Extract test metadata from tfrecord
+test_ds = get_dataset(TEST_FILENAMES,
+                      shuffle=False,
+                      augment=False,
+                      repeat=False,
+                      batch_size=1,
+                      cache=False,
+                      drop_remainder=False,
+                      return_id=True,
+                      return_label=True,
+                      )
+info = [(id_.numpy()[0].decode('utf-8'),label.numpy()[0]) for _,label,id_ in tqdm(iter(test_ds),total=NUM_TEST)]
+test_ids, test_labels = list(zip(*info))
+
+# Plot Confusion Matrix
+cm = confusion_matrix(test_labels, test_preds.reshape(-1).round())
+plt.figure(figsize=(6,6))
+plot_confusion_matrix(cm, ["Real","Fake"],normalize=True)
+plt.tight_layout()
+plt.gcf()
+plt.savefig('images/cm.png')
+plt.close()
