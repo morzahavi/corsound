@@ -199,29 +199,29 @@ if DEBUG:
 print(f'Train Samples: {len(train_df)}')
 train_df.head(2)
 
-# valid_df = pd.read_csv(f'{BASE_PATH}/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.dev.trl.txt',
-#                        sep=" ", header=None)
-# valid_df.columns =['speaker_id','filename','system_id','null','class_name']
-# valid_df.drop(columns=['null'],inplace=True)
-# valid_df['filepath'] = f'{BASE_PATH}/ASVspoof2019_LA_dev/flac/'+valid_df.filename+'.flac'
-# valid_df['target'] = (valid_df.class_name=='spoof').astype('int32')
-# if DEBUG:
-#     valid_df = valid_df.groupby(['target']).sample(2000).reset_index(drop=True)
-# print(f'Valid Samples: {len(valid_df)}')
-# valid_df.head(2)
-#
-# test_df = pd.read_csv(f'{BASE_PATH}/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt',
-#                       sep=" ", header=None)
-# test_df.columns =['speaker_id','filename','system_id','null','class_name']
-# test_df.drop(columns=['null'],inplace=True)
-# test_df['filepath'] = f'{BASE_PATH}/ASVspoof2019_LA_eval/flac/'+test_df.filename+'.flac'
-# test_df['target'] = (test_df.class_name=='spoof').astype('int32')
-# if DEBUG:
-#     test_df = test_df.groupby(['target']).sample(2000).reset_index(drop=True)
-# print(f'Test Samples: {len(test_df)}')
-# test_df.head(2)
-# from sklearn.model_selection import StratifiedKFold
-# skf = StratifiedKFold(n_splits=FOLDS, shuffle=True, random_state=SEED)
+valid_df = pd.read_csv(f'asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.dev.trl.txt',
+                       sep=" ", header=None)
+valid_df.columns =['speaker_id','filename','system_id','null','class_name']
+valid_df.drop(columns=['null'],inplace=True)
+valid_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_dev/flac/'+valid_df.filename+'.flac'
+valid_df['target'] = (valid_df.class_name=='spoof').astype('int32')
+if DEBUG:
+    valid_df = valid_df.groupby(['target']).sample(2000).reset_index(drop=True)
+print(f'Valid Samples: {len(valid_df)}')
+valid_df.head(2)
+
+test_df = pd.read_csv(f'asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt',
+                      sep=" ", header=None)
+test_df.columns =['speaker_id','filename','system_id','null','class_name']
+test_df.drop(columns=['null'],inplace=True)
+test_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_eval/flac/'+test_df.filename+'.flac'
+test_df['target'] = (test_df.class_name=='spoof').astype('int32')
+if DEBUG:
+    test_df = test_df.groupby(['target']).sample(2000).reset_index(drop=True)
+print(f'Test Samples: {len(test_df)}')
+test_df.head(2)
+from sklearn.model_selection import StratifiedKFold
+skf = StratifiedKFold(n_splits=FOLDS, shuffle=True, random_state=SEED)
 
 
 
