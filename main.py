@@ -892,10 +892,7 @@ def plot_history(history):
     plt.text(x - 0.03 * xdist, y + 0.05 * ydist, "min loss", size=14)
     plt.ylabel("Loss", size=14)
     plt.legend(loc=3)
-    plt.tight_layout()
-    plt.gcf()
-    plt.savefig(f'images/{str(history)}.png')
-    plt.close()
+    plt.savefig(f"history_plot.png")
     return
 
 def display_batch(batch, row=2, col=5):
@@ -1160,7 +1157,8 @@ valid_ds = get_dataset(
 )
 
 
-
+# Convert dict history to df history
+history = pd.DataFrame(history.history)
 
 # Load best weights
 model.load_weights("/kaggle/working/ckpt.h5")
