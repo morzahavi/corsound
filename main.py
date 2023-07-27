@@ -1161,8 +1161,6 @@ valid_ds = get_dataset(
 
 
 
-# Convert dict history to df history
-history = pd.DataFrame(history.history)
 
 # Load best weights
 model.load_weights("/kaggle/working/ckpt.h5")
