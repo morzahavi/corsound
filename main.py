@@ -1128,7 +1128,7 @@ with strategy.scope():
 
 # Callbacks
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
-    "checkpoints/conformer-encoder.h5",
+    "/kaggle/working/ckpt.h5",
     verbose=CFG.verbose,
     monitor="val_f1_score",
     mode="max",
@@ -1174,14 +1174,14 @@ history = model.fit(
 history = pd.DataFrame(history.history)
 
 # Load best weights
-model.load_weights("checkpoints/conformer-encoder.h5")
+model.load_weights("/kaggle/working/ckpt.h5")
 
 # Plot Training History
 if CFG.display_plot:
     plot_history(history)
 
 # Load best weights
-model.load_weights("checkpoints/conformer-encoder.h5")
+model.load_weights("/kaggle/working/ckpt.h5")
 
 # Compute & save best Test result
 print("\n>> Valid Result:")
