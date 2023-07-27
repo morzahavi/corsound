@@ -899,6 +899,9 @@ def display_batch(batch, row=2, col=5):
         plt.subplot(row, col, idx+1)
         text = 'Fake' if tar else 'Real'
         plt.title(text, fontsize=15, color=('red' if tar else 'green'))
+        plt.tight_layout()
+        plt.savefig(f'{str(idx)}.png')
+        plt.close()
     plt.tight_layout();
     plt.grid(False)
     plt.tight_layout()
