@@ -251,8 +251,8 @@ audio, sr= load_audio(row.filepath, sr=None)
 audio = audio[:AUDIO_LEN]
 spec = get_spec(audio)
 
-print('# Listen')
-listen_audio(audio, sr=16000)
+# print('# Listen')
+# listen_audio(audio, sr=16000)
 
 print("# Plot\n")
 plt.figure(figsize=(12*2,5))
@@ -260,14 +260,17 @@ plt.figure(figsize=(12*2,5))
 plt.subplot(121)
 plot_audio(audio)
 plt.title("Waveform",fontsize=17)
+plt.tight_layout()
+plt.savefig('wave_form_0')
+plt.close()
+
 
 plt.subplot(122)
 plot_spec(spec);
 plt.title("Spectrogram",fontsize=17)
-
 plt.tight_layout()
-plt.show()
-
+plt.savefig('wave_spect_0')
+plt.close()
 
 row = train_df[train_df.target==1].iloc[10]
 print(f'Filename: {row.filename} | Label: {row.class_name}')
@@ -284,13 +287,17 @@ plt.figure(figsize=(12*2,5))
 plt.subplot(121)
 plot_audio(audio)
 plt.title("Waveform",fontsize=17)
+plt.tight_layout()
+plt.savefig('wave_form_1')
+plt.close()
 
 plt.subplot(122)
 plot_spec(spec);
 plt.title("Spectrogram",fontsize=17)
-
 plt.tight_layout()
-plt.show()
+plt.savefig('wave_spect_1')
+plt.close()
+
 
 
 from sklearn.model_selection import StratifiedKFold
