@@ -814,7 +814,7 @@ def plot_confusion_matrix(cm,
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    # plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
     #     plt.colorbar()
     tick_marks = np.arange(len(classes))
@@ -832,6 +832,9 @@ def plot_confusion_matrix(cm,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.grid(False)
+    plt.tight_layout()
+    plt.savefig('cm.png')
+    plt.close()
     return
 
 def plot_history(history):
@@ -895,7 +898,6 @@ def display_batch(batch, row=2, col=5):
         img = imgs[idx].numpy().transpose()[0]
         tar = tars[idx].numpy()
         plt.subplot(row, col, idx+1)
-        plt.imshow(img, cmap='coolwarm')
         text = 'Fake' if tar else 'Real'
         plt.title(text, fontsize=15, color=('red' if tar else 'green'))
     plt.tight_layout();
