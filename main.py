@@ -38,6 +38,13 @@ import itertools
 import scipy
 import warnings
 
+import rasterio as rio
+import folium
+
+import ee
+from kaggle_secrets import UserSecretsClient
+from google.oauth2.credentials import Credentials
+
 # Show less log messages
 tf.get_logger().setLevel('ERROR')
 tf.autograph.set_verbosity(0)
@@ -1121,7 +1128,7 @@ with strategy.scope():
 
 # Callbacks
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
-    "/kaggle/working/ckpt.h5",
+    "checkpoints/ckpt.h5",
     verbose=CFG.verbose,
     monitor="val_f1_score",
     mode="max",
@@ -1167,14 +1174,14 @@ history = model.fit(
 history = pd.DataFrame(history.history)
 
 # Load best weights
-model.load_weights("/kaggle/working/ckpt.h5")
+model.load_weights("checkpoints/ckpt.h5")
 
 # Plot Training History
 if CFG.display_plot:
     plot_history(history)
 
 # Load best weights
-model.load_weights("/kaggle/working/ckpt.h5")
+model.load_weights("checkpoints/ckpt.h5")
 
 # Compute & save best Test result
 print("\n>> Valid Result:")
