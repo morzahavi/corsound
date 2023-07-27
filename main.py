@@ -671,3 +671,137 @@ def get_cutmix(alpha, prob=0.5):
         return specs, labels
     return cutmix
 
+# Compute Spectrogram from audio
+def Audio2Spec(audio,spec_shape=[256, 128],sr=16000,nfft=2048,window=2048,fmin=20,fmax=8000):
+    spec_time = spec_shape[0]
+    spec_freq = spec_shape[1]
+    audio_len = tf.shape(audio)[0]
+    hop_length = tf.cast((audio_len // (spec_time - 1)), tf.int32) # compute hop_length to keep desired spec_shape
+    spec = tfio.audio.spectrogram(audio, nfft=nfft, window=window, stride=hop_length) # convert to spectrogram
+    mel_spec = tfio.audio.melscale(spec, rate=sr, mels=spec_freq, fmin=fmin, fmax=fmax) # transform to melscale
+    db_mel_spec = tfio.audio.dbscale(mel_spec, top_db=80) # from power to db (log10) scale
+    if tf.shape(db_mel_spec)[0] > spec_time:  # check if we have desiered shape
+        db_mel_spec = db_mel_spec[:spec_time,:]
+    db_mel_spec = tf.reshape(db_mel_spec, spec_shape)
+    return db_mel_spec
+
+# Convert spectrogram (H,W) to image (H,W,1)
+def Spec2Img(spec, num_channels=1):
+    # 1 channel image
+    img = spec[..., tf.newaxis]
+    # Copy same image across channel axis
+    if num_channels>1:
+        img = tf.tile(img, [1, 1, num_channels])
+    return img
+
+# Decode audio from wav
+def decode_audio(data, audio_len):
+    # Decode
+    audio, sr = tf.audio.decode_wav(data)
+    audio = tf.reshape(audio, [audio_len]) # explicit size needed for TPU
+    audio = tf.cast(audio,tf.float32)
+    # Normalization
+    if CFG.normalize:
+        audio = Normalize(audio)
+    return audio
+
+# Decode label
+def decode_label(label):
+    label = tf.cast(label, tf.float32)
+    return label
+
+# Read tfrecord data & parse it & do augmentation
+def read_tfrecord(example, augment=True, return_id=False, return_label=True, target_len=CFG.audio_len, spec_shape=CFG.spec_shape):
+    tfrec_format = {
+        "audio" : tf.io.FixedLenFeature([], tf.string), # tf.string means bytestring
+        "id" : tf.io.FixedLenFeature([], tf.string),
+        "speaker_id": tf.io.FixedLenFeature([], tf.string),
+        "system_id" : tf.io.FixedLenFeature([], tf.string),
+        "audio_len" : tf.io.FixedLenFeature([], tf.int64),
+        "target" : tf.io.FixedLenFeature([], tf.int64),
+    }
+    # Parses a single example proto.
+    example = tf.io.parse_single_example(
+        example, tfrec_format
+    )
+    # Extract data from example proto
+    audio_id = example["id"]
+    audio_len = example["audio_len"]
+    # Decoding
+    audio = decode_audio(example["audio"], audio_len)  # decode audio from .wav
+    target = decode_label(example["target"]) # decode label -> type cast
+    # Trim Audio
+    audio = TrimAudio(audio)
+    # Crop or Pad audio to keep a fixed length
+    audio = CropOrPad(audio, target_len)
+    if augment:
+        # Apply AudioAug
+        audio = AudioAug(audio)
+    # Compute Spectrogram
+    spec = Audio2Spec(audio, spec_shape=spec_shape)
+    if augment:
+        # Apply SpecAug
+        spec = SpecAug(spec)
+    # Spectrogram (H, W) to Image (H, W, C)
+    img = Spec2Img(spec, num_channels=1)
+    # Clip & Reshape
+    img = tf.clip_by_value(img, 0, 1) if CFG.clip else img
+    img = tf.reshape(img, [*spec_shape, 1])
+
+    if not return_id:
+        if return_label:
+            return (img, target)
+        else:
+            return img
+    else:
+        if return_label:
+            return (img, target, audio_id)
+        else:
+            return (img, audio_id)
+
+
+def get_dataset(
+        filenames,
+        shuffle=True,
+        repeat=True,
+        augment=True,
+        cache=True,
+        return_id=False,
+        return_label=True,
+        batch_size=CFG.batch_size * REPLICAS,
+        target_len=CFG.audio_len,
+        spec_shape=CFG.spec_shape,
+        drop_remainder=False,
+        seed=CFG.seed,
+):
+    # Real tfrecord files
+    dataset = tf.data.TFRecordDataset(filenames, num_parallel_reads=AUTO)
+    if cache:
+        dataset = dataset.cache()  # cache data for speedup
+    if repeat:
+        dataset = dataset.repeat()  # repeat the data (for training only)
+    if shuffle:
+        dataset = dataset.shuffle(1024, seed=seed)  # shuffle the data (for training only)
+        options = tf.data.Options()
+        options.experimental_deterministic = False  # order won't be maintained when we shuffle
+        dataset = dataset.with_options(options)
+    # Parse data from tfrecord
+    dataset = dataset.map(lambda x: read_tfrecord(x,
+                                                  augment=augment,
+                                                  return_id=return_id,
+                                                  return_label=return_label,
+                                                  target_len=target_len,),
+                          num_parallel_calls=AUTO,)
+    # Batch Data Samples
+    dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
+    # MixUp
+    if CFG.mixup_prob and augment and return_label:
+        dataset = dataset.map(get_mixup(alpha=CFG.mixup_alpha,prob=CFG.mixup_prob),num_parallel_calls=AUTO)
+    # CutMix
+    if CFG.cutmix_prob and augment and return_label:
+        dataset = dataset.map(get_cutmix(alpha=CFG.cutmix_alpha,prob=CFG.cutmix_prob),num_parallel_calls=AUTO)
+    # Prefatch data for speedup
+    dataset = dataset.prefetch(AUTO)
+    return dataset
+
+
