@@ -1171,4 +1171,78 @@ model.load_weights("/kaggle/working/ckpt.h5")
 if CFG.display_plot:
     plot_history(history)
 
+# Load best weights
+model.load_weights("/kaggle/working/ckpt.h5")
 
+# Compute & save best Test result
+print("\n>> Valid Result:")
+valid_result = model.evaluate(
+    get_dataset(
+        VALID_FILENAMES,
+        batch_size=BATCH_SIZE,
+        augment=False,
+        shuffle=False,
+        repeat=False,
+        cache=False,
+    ),
+    return_dict=True,
+    verbose=1,
+)
+print()
+
+# Compute & save best Test result
+print("\n>> Test Result:")
+test_result = model.evaluate(
+    get_dataset(
+        TEST_FILENAMES,
+        batch_size=BATCH_SIZE,
+        augment=False,
+        shuffle=False,
+        repeat=False,
+        cache=False,
+    ),
+    return_dict=True,
+    verbose=1,
+)
+print()
+
+# Log in wandb
+if CFG.wandb:
+    best_epoch = np.argmax(history["val_f1_score"]) + 1
+    wandb.log({"best": {"valid":valid_result,
+                        "test":test_result,
+                        "epoch":best_epoch}})
+    wandb.run.finish()
+
+# Get Prediction for test data
+test_ds = get_dataset(TEST_FILENAMES,
+                      shuffle=False,
+                      augment=False,
+                      repeat=False,
+                      batch_size=BATCH_SIZE,
+                      cache=False,
+                      drop_remainder=False,
+                      return_id=False,
+                      return_label=False,
+                      )
+test_preds = model.predict(test_ds, verbose=1, steps=NUM_TEST/BATCH_SIZE)
+
+# Extract test metadata from tfrecord
+test_ds = get_dataset(TEST_FILENAMES,
+                      shuffle=False,
+                      augment=False,
+                      repeat=False,
+                      batch_size=1,
+                      cache=False,
+                      drop_remainder=False,
+                      return_id=True,
+                      return_label=True,
+                      )
+info = [(id_.numpy()[0].decode('utf-8'),label.numpy()[0]) for _,label,id_ in tqdm(iter(test_ds),total=NUM_TEST)]
+test_ids, test_labels = list(zip(*info))
+
+# Plot Confusion Matrix
+print("\n>> Confusoin Matrix")
+cm = confusion_matrix(test_labels, test_preds.reshape(-1).round())
+plt.figure(figsize=(6,6))
+plot_confusion_matrix(cm, ["Real","Fake"],normalize=True)
