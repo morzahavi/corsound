@@ -25,4 +25,6 @@ RUN pip install -r /corsound/req.txt
 RUN sh /corsound/install_functions.sh
 # Install CUDA backend
 RUN sh corsound/install_cuda.sh
+FROM nvidia/cuda:10.2-base
+CMD nvidia-smi
 
