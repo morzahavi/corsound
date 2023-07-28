@@ -26,7 +26,8 @@ DEBUG = True
 SAMPLE_RATE = 16000
 DURATION = 5.0  # duration in second
 AUDIO_LEN = int(SAMPLE_RATE * DURATION)
-
+print("1")
+exit()
 # Spectrogram params
 N_MELS = 128  # freq axis
 N_FFT = 2048
