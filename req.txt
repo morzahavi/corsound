@@ -14,7 +14,7 @@ notebook
 IProgress
 ipywidgets
 matplotlib~=3.6.3
-tdqm
+tqdm
 wandb~=0.15.7
 seaborn~=0.12.2
 wheel

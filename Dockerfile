@@ -21,6 +21,7 @@ RUN apt-get install default-jdk
 
 # Install project dependencies
 RUN pip install -r /corsound/req.txt
+RUN pip install -U audio_classification_models
 # Install custom functions for project
 RUN sh /corsound/install_functions.sh
 # Install CUDA backend

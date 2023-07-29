@@ -1,13 +1,17 @@
 import tensorflow as tf
 import pandas as pd
+import numpy as np
 import os
+import sys
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
 import argparse
-import tdqm
+from tqdm import tqdm
+import itertools
+import re
 # Graphics
 plt.rcParams["font.family"] = 'DejaVu Sans'
 sns.set_style("whitegrid", {'axes.grid': False})
@@ -19,29 +23,7 @@ tf.get_logger().setLevel('ERROR')
 tf.autograph.set_verbosity(0)
 os.environ["WANDB_SILENT"] = "true"
 #
-
-#
-BASE_PATH = ""
-
-def main():
-    parser = argparse.ArgumentParser(description="Read data from a CSV file with BASE_PATH")
-    parser.add_argument("--path", "-p", help="Path to set as BASE_PATH")
-
-    args = parser.parse_args()
-
-    # If --path flag is provided, set BASE_PATH accordingly
-    if args.path:
-        global BASE_PATH
-        BASE_PATH = args.path
-
-    # Append the desired CSV file to the BASE_PATH and read the DataFrame
-    train_df = pd.read_csv(f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt',
-                           sep=" ", header=None)
-
-    # Your data processing or other operations on train_df can go here
-
-if __name__ == "__main__":
-    main()
+BASE_PATH = "/Users/morzahavi/"
 #####
 FOLDS = 10
 SEED = 101
@@ -50,7 +32,6 @@ DEBUG = True
 SAMPLE_RATE = 16000
 DURATION = 5.0  # duration in second
 AUDIO_LEN = int(SAMPLE_RATE * DURATION)
-
 # Spectrogram params
 N_MELS = 128  # freq axis
 N_FFT = 2048
@@ -58,9 +39,10 @@ SPEC_WIDTH = 256  # time axis
 HOP_LEN = AUDIO_LEN // (SPEC_WIDTH - 1)  # non-overlap region
 FMAX = SAMPLE_RATE // 2  # max frequency
 SPEC_SHAPE = [SPEC_WIDTH, N_MELS]  # output spectrogram shape
-
+#
 train_df = pd.read_csv(f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt',
                        sep=" ", header=None)
+train_df.columns = ['speaker_id', 'filename', 'system_id', 'null', 'class_name']
 train_df.columns = ['speaker_id', 'filename', 'system_id', 'null', 'class_name']
 train_df.drop(columns=['null'], inplace=True)
 train_df['filepath'] = f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_train/flac/' + train_df.filename + '.flac'
@@ -69,7 +51,7 @@ if DEBUG:
     train_df = train_df.groupby(['target']).sample(2500).reset_index(drop=True)
 print(f'Train Samples: {len(train_df)}')
 train_df.head(2)
-
+#
 valid_df = pd.read_csv(f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.dev.trl.txt',
                        sep=" ", header=None)
 valid_df.columns = ['speaker_id', 'filename', 'system_id', 'null', 'class_name']
@@ -80,7 +62,7 @@ if DEBUG:
     valid_df = valid_df.groupby(['target']).sample(2000).reset_index(drop=True)
 print(f'Valid Samples: {len(valid_df)}')
 valid_df.head(2)
-
+#
 test_df = pd.read_csv(f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt',
                       sep=" ", header=None)
 test_df.columns = ['speaker_id', 'filename', 'system_id', 'null', 'class_name']
@@ -234,8 +216,11 @@ def train_serialize_example(feature0, feature1, feature2,
     return example_proto.SerializeToString()
 
 
-## Write TFRecord
-os.makedirs('tmp/asvspoof', exist_ok=True)
+
+TF_PATH = "/Users/morzahavi/"
+
+# Write TFRecord
+os.makedirs(f'{TF_PATH}tmp/asvspoof', exist_ok=True)
 
 
 ##
@@ -247,7 +232,7 @@ def write_tfrecord(df, split='train', show=True):
         if show:
             print();
             print('Writing %s TFRecord of fold %i :' % (split, fold))
-        with tf.io.TFRecordWriter('tmp/asvspoof/%s%.2i-%i.tfrec' % (split, fold, fold_df.shape[0])) as writer:
+        with tf.io.TFRecordWriter(f'{TF_PATH}/tmp/asvspoof/%s%.2i-%i.tfrec' % (split, fold, fold_df.shape[0])) as writer:
             samples = fold_df.shape[0]  # samples = 200
             it = tqdm(range(samples)) if show else range(samples)
             for k in it:  # images in fold
@@ -269,7 +254,7 @@ def write_tfrecord(df, split='train', show=True):
                 )
                 writer.write(example)
             if show:
-                filepath = 'tmp/asvspoof/%s%.2i-%i.tfrec' % (split, fold, fold_df.shape[0])
+                filepath = f'{TF_PATH}/tmp/asvspoof/%s%.2i-%i.tfrec' % (split, fold, fold_df.shape[0])
                 filename = filepath.split('/')[-1]
                 filesize = os.path.getsize(filepath) / 10 ** 6
                 print(filename, ':', np.around(filesize, 2), 'MB')
@@ -285,8 +270,9 @@ def tf_records_condition():
     write_tfrecord(valid_df, split='valid', show=True)
     write_tfrecord(test_df, split='test', show=True)
 
-
-directory_path = "tmp/asvspoof"
+# print("1")
+# exit()
+directory_path = f'{TF_PATH}tmp/asvspoof'
 if is_directory_empty(directory_path):
     tf_records_condition()
 
@@ -367,9 +353,9 @@ def display_batch(batch, row=2, col=5):
 
 BATCH_SIZE = 32
 AUTO = tf.data.experimental.AUTOTUNE
-TRAIN_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/train*.tfrec')
-VALID_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/valid*.tfrec')
-TEST_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/test*.tfrec')
+TRAIN_FILENAMES = tf.io.gfile.glob(f'{TF_PATH}tmp/asvspoof/train*.tfrec')
+VALID_FILENAMES = tf.io.gfile.glob(f'{TF_PATH}tmp/asvspoof/valid*.tfrec')
+TEST_FILENAMES = tf.io.gfile.glob(f'{TF_PATH}tmp/asvspoof/test*.tfrec')
 print('There are %i train, %i valid & %i test images' % (count_data_items(TRAIN_FILENAMES),
                                                          count_data_items(VALID_FILENAMES),
                                                          count_data_items(TEST_FILENAMES)))
@@ -382,10 +368,7 @@ import os
 
 import matplotlib.pyplot as plt
 
-plt.rcParams["font.family"] = 'DejaVu Sans'
-import seaborn as sns
 
-sns.set_style("whitegrid", {'axes.grid': False})
 
 import tensorflow as tf, re
 import tensorflow.keras.backend as K
@@ -1006,6 +989,26 @@ import audio_classification_models as acm
 
 URL = 'https://github.com/awsaf49/audio_classification_models/releases/download/v1.0.8/conformer-encoder.h5'
 
+from tensorflow.keras.models import Model
+
+# Create your Keras model here
+# For example:
+# model = Model(...)
+
+# def load_pretrain_local(model, local_path):
+#     "Load weights from the local file into the model"
+#     if not os.path.isfile(local_path):
+#         raise FileNotFoundError(f"The file '{local_path}' does not exist.")
+#     model.load_weights(local_path, by_name=True, skip_mismatch=True)
+
+# from tensorflow.keras.models import Model
+#
+# # Create your Keras model here
+# # For example:
+# # model = Model(...)
+#
+# local_path = os.path.expanduser("~/icloud/projects/corsound/conformer-encoder.h5")
+
 
 def Conformer(input_shape=(128, 80, 1), num_classes=1, final_activation='sigmoid', pretrain=True):
     """Souce Code: https://github.com/awsaf49/audio_classification_models"""
@@ -1041,16 +1044,26 @@ def get_model(name=CFG.model_name, loss=CFG.loss, ):
     return model
 
 
-import sys
 
+
+
+# print("1")
+# exit()
+
+import sys
+import os
 model = get_model()
-model.summary()
-output_file = "model_summary.txt"
-# Redirect the standard output to the file
-with open(output_file, 'w') as f:
-    sys.stdout = f  # Set the standard output to the file
-    model.summary()  # Output will be written to the file instead of the console
-    sys.stdout = sys.__stdout__  # Reset the standard output back to the console
+
+# model.summary()
+# output_file = "/model_summary.txt"
+#
+# # Redirect the standard output to the file
+# with open(output_file, 'w') as f:
+#     sys.stdout = f  # Set the standard output to the file
+#     model.summary()  # Output will be written to the file instead of the console
+#     sys.stdout = sys.__stdout__  # Reset the standard output back to the console
+#
+
 
 if CFG.wandb:
     "login in wandb otherwise run anonymously"
@@ -1073,7 +1086,7 @@ def wandb_init():
     config["id"] = id_
     run = wandb.init(
         id=id_,
-        project="fake-speech-detection",
+        project="corsound",
         name=f"dim-{CFG.spec_shape[0]}x{CFG.spec_shape[1]}|model-{CFG.model_name}",
         config=config,
         anonymous=anonymous,
@@ -1089,10 +1102,12 @@ if CFG.wandb:
     run = wandb_init()
     WandbCallback = wandb.keras.WandbCallback(save_model=False)
 
+
+
 # Load gcs_path of train, valid & test
-TRAIN_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/train*.tfrec')
-VALID_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/valid*.tfrec')
-TEST_FILENAMES = tf.io.gfile.glob('tmp/asvspoof/test*.tfrec')
+TRAIN_FILENAMES = tf.io.gfile.glob(f'{TF_PATH}tmp/asvspoof/train*.tfrec')
+VALID_FILENAMES = tf.io.gfile.glob(f'{TF_PATH}tmp/asvspoof/valid*.tfrec')
+TEST_FILENAMES = tf.io.gfile.glob(f'{TF_PATH}tmp/asvspoof/test*.tfrec')
 
 # Take Only 10 Files if run in Debug Mode
 if CFG.debug:

@@ -1,6 +1,41 @@
 
 
 
+
+
+
+
+
+
+from pathlib import Path
+
+# def file_exists(file_path):
+#     file = Path(file_path)
+#     if file.exists():
+#         print(f"The file '{file_path}' exists.")
+#         return True
+#     else:
+#         print(f"The file '{file_path}' does not exist.")
+#         return False
+
+# # Example usage:
+# file_path = "Users/morzahavi/asvspoof/LA/ASVspoof2019_LA_train/flac/LA_T_2226656.flac"
+# assert file_exists(file_path), f"File '{file_path}' does not exist!"
+# exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # The right run command with mount
 docker run -it -v /Users/morzahavi/icloud/Downloads/asvspoof:/corsound/asvspoof corsound
 
