@@ -1205,6 +1205,9 @@ model.load_weights("checkpoints/ckpt.h5")
 if CFG.display_plot:
     plot_history(history)
 
+
+print("1")
+exit()
 # Load best weights
 model.load_weights("checkpoints/ckpt.h5")
 
