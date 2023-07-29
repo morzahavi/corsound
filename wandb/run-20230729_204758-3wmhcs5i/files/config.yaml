@@ -1,0 +1,158 @@
+wandb_version: 1
+
+wandb:
+  desc: null
+  value: true
+project:
+  desc: null
+  value: fake-speech-detection
+debug:
+  desc: null
+  value:
+  - true
+exp_name:
+  desc: null
+  value: v0
+comment:
+  desc: null
+  value: Conformer-128x80-cosine-no_aug-no_fc
+verbose:
+  desc: null
+  value: 0
+display_plot:
+  desc: null
+  value: true
+device:
+  desc: null
+  value: CPU
+model_name:
+  desc: null
+  value: Conformer
+seed:
+  desc: null
+  value: 101
+sample_rate:
+  desc: null
+  value: 16000
+duration:
+  desc: null
+  value: 3.5
+audio_len:
+  desc: null
+  value: 56000
+normalize:
+  desc: null
+  value: true
+spec_freq:
+  desc: null
+  value: 128
+n_fft:
+  desc: null
+  value: 2048
+spec_time:
+  desc: null
+  value: 256
+hop_len:
+  desc: null
+  value: 219
+fmin:
+  desc: null
+  value: 20
+fmax:
+  desc: null
+  value: 8000
+spec_shape:
+  desc: null
+  value:
+  - 256
+  - 128
+timeshift_prob:
+  desc: null
+  value: 0.0
+gn_prob:
+  desc: null
+  value: 0.0
+time_mask:
+  desc: null
+  value: 20
+freq_mask:
+  desc: null
+  value: 10
+cutmix_prob:
+  desc: null
+  value: 0.0
+cutmix_alpha:
+  desc: null
+  value: 2.5
+mixup_prob:
+  desc: null
+  value: 0.0
+mixup_alpha:
+  desc: null
+  value: 2.5
+batch_size:
+  desc: null
+  value: 32
+drop_remainder:
+  desc: null
+  value: false
+epochs:
+  desc: null
+  value: 12
+steps_per_execution:
+  desc: null
+  value: null
+loss:
+  desc: null
+  value: binary_crossentropy
+optimizer:
+  desc: null
+  value: Adam
+lr:
+  desc: null
+  value: 0.0001
+lr_schedule:
+  desc: null
+  value: cosine
+augment:
+  desc: null
+  value: false
+clip:
+  desc: null
+  value: false
+id:
+  desc: null
+  value: 3wmhcs5i
+_wandb:
+  desc: null
+  value:
+    python_version: 3.9.17
+    cli_version: 0.15.7
+    framework: keras
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1690652878.14746
+    t:
+      1:
+      - 2
+      - 3
+      - 5
+      - 53
+      - 55
+      2:
+      - 2
+      - 3
+      - 5
+      - 53
+      - 55
+      3:
+      - 3
+      - 8
+      - 13
+      - 14
+      - 16
+      - 23
+      4: 3.9.17
+      5: 0.15.7
+      8:
+      - 5

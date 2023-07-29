@@ -1,0 +1,1 @@
+{"num_train": 1000, "num_valid": 800, "num_test": 800, "_timestamp": 1690653222.344845, "_runtime": 2.605081081390381, "_step": 0, "_wandb": {"runtime": 4}}

@@ -1102,7 +1102,7 @@ if CFG.wandb:
     run = wandb_init()
     WandbCallback = wandb.keras.WandbCallback(save_model=False)
 
-
+#1#
 
 # Load gcs_path of train, valid & test
 TRAIN_FILENAMES = tf.io.gfile.glob(f'{TF_PATH}tmp/asvspoof/train*.tfrec')
@@ -1126,7 +1126,7 @@ NUM_TEST = count_data_items(TEST_FILENAMES)
 # Compute batch size & steps_per_epoch
 BATCH_SIZE = CFG.batch_size * REPLICAS
 STEPS_PER_EPOCH = NUM_TRAIN // BATCH_SIZE
-
+#2#
 # print("#" * 60)
 # print("#### IMAGE_SIZE: (%i, %i) | BATCH_SIZE: %i | EPOCHS: %i"% (CFG.spec_shape[0],
 #                                                                   CFG.spec_shape[1],
@@ -1161,7 +1161,7 @@ checkpoint = tf.keras.callbacks.ModelCheckpoint(
     save_weights_only=True,
 )
 callbacks = [checkpoint, get_lr_callback(mode=CFG.lr_schedule, epochs=CFG.epochs)]
-
+#3#
 if CFG.wandb:
     # Include w&b callback if WANDB is True
     callbacks.append(WandbCallback)
@@ -1206,8 +1206,7 @@ if CFG.display_plot:
     plot_history(history)
 
 
-print("1")
-exit()
+
 # Load best weights
 model.load_weights("checkpoints/ckpt.h5")
 
