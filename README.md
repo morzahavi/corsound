@@ -56,3 +56,13 @@ $ cd corsound
 $ python test_gpu.py
 ````
 
+## Errors
+Unfortunately, running this code on Mac Metal was not possible as I have got errors
+due to the lack of support of tensorflow and Apple Metal GPU.
+Even though I have 16 core GPU, the following message was not solvable.
+``F tensorflow/core/lib/monitoring/sampler.cc:42] Check failed: bucket_limits_[i] > bucket_limits_[i - 1] (10 vs. 0)
+``
+
+See documentation here:
+https://stackoverflow.com/questions/68105073/tensorflow-error-when-used-as-docker-baseimage
+https://github.com/tensorflow/tensorflow/issues/52845

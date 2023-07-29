@@ -26,8 +26,7 @@ DEBUG = True
 SAMPLE_RATE = 16000
 DURATION = 5.0  # duration in second
 AUDIO_LEN = int(SAMPLE_RATE * DURATION)
-print("1")
-exit()
+
 # Spectrogram params
 N_MELS = 128  # freq axis
 N_FFT = 2048
@@ -97,7 +96,8 @@ def get_spec(audio):
     spec = librosa.power_to_db(spec)
     return spec
 
-
+print("1")
+exit()
 def plot_spec(spec, sr=16000):
     fig = librosa.display.specshow(spec,
                                    x_axis='time',
