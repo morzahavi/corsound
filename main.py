@@ -6,6 +6,7 @@ import librosa.display
 import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
+import argparse
 # Graphics
 plt.rcParams["font.family"] = 'DejaVu Sans'
 sns.set_style("whitegrid", {'axes.grid': False})
@@ -17,11 +18,33 @@ tf.get_logger().setLevel('ERROR')
 tf.autograph.set_verbosity(0)
 os.environ["WANDB_SILENT"] = "true"
 #
-BASE_PATH = '/asvpoof/LA'
+
+#
+BASE_PATH = ""
+
+def main():
+    parser = argparse.ArgumentParser(description="Read data from a CSV file with BASE_PATH")
+    parser.add_argument("--path", "-p", help="Path to set as BASE_PATH")
+
+    args = parser.parse_args()
+
+    # If --path flag is provided, set BASE_PATH accordingly
+    if args.path:
+        global BASE_PATH
+        BASE_PATH = args.path
+
+    # Append the desired CSV file to the BASE_PATH and read the DataFrame
+    train_df = pd.read_csv(f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt',
+                           sep=" ", header=None)
+
+    # Your data processing or other operations on train_df can go here
+
+if __name__ == "__main__":
+    main()
+#####
 FOLDS = 10
 SEED = 101
 DEBUG = True
-
 # Audio params
 SAMPLE_RATE = 16000
 DURATION = 5.0  # duration in second
@@ -35,33 +58,33 @@ HOP_LEN = AUDIO_LEN // (SPEC_WIDTH - 1)  # non-overlap region
 FMAX = SAMPLE_RATE // 2  # max frequency
 SPEC_SHAPE = [SPEC_WIDTH, N_MELS]  # output spectrogram shape
 
-train_df = pd.read_csv(f'asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt',
+train_df = pd.read_csv(f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt',
                        sep=" ", header=None)
 train_df.columns = ['speaker_id', 'filename', 'system_id', 'null', 'class_name']
 train_df.drop(columns=['null'], inplace=True)
-train_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_train/flac/' + train_df.filename + '.flac'
+train_df['filepath'] = f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_train/flac/' + train_df.filename + '.flac'
 train_df['target'] = (train_df.class_name == 'spoof').astype('int32')  # set labels 1 for fake and 0 for real
 if DEBUG:
     train_df = train_df.groupby(['target']).sample(2500).reset_index(drop=True)
 print(f'Train Samples: {len(train_df)}')
 train_df.head(2)
 
-valid_df = pd.read_csv(f'asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.dev.trl.txt',
+valid_df = pd.read_csv(f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.dev.trl.txt',
                        sep=" ", header=None)
 valid_df.columns = ['speaker_id', 'filename', 'system_id', 'null', 'class_name']
 valid_df.drop(columns=['null'], inplace=True)
-valid_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_dev/flac/' + valid_df.filename + '.flac'
+valid_df['filepath'] = f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_dev/flac/' + valid_df.filename + '.flac'
 valid_df['target'] = (valid_df.class_name == 'spoof').astype('int32')
 if DEBUG:
     valid_df = valid_df.groupby(['target']).sample(2000).reset_index(drop=True)
 print(f'Valid Samples: {len(valid_df)}')
 valid_df.head(2)
 
-test_df = pd.read_csv(f'asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt',
+test_df = pd.read_csv(f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt',
                       sep=" ", header=None)
 test_df.columns = ['speaker_id', 'filename', 'system_id', 'null', 'class_name']
 test_df.drop(columns=['null'], inplace=True)
-test_df['filepath'] = f'asvspoof/LA/ASVspoof2019_LA_eval/flac/' + test_df.filename + '.flac'
+test_df['filepath'] = f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_eval/flac/' + test_df.filename + '.flac'
 test_df['target'] = (test_df.class_name == 'spoof').astype('int32')
 if DEBUG:
     test_df = test_df.groupby(['target']).sample(2000).reset_index(drop=True)
@@ -96,8 +119,6 @@ def get_spec(audio):
     spec = librosa.power_to_db(spec)
     return spec
 
-print("1")
-exit()
 def plot_spec(spec, sr=16000):
     fig = librosa.display.specshow(spec,
                                    x_axis='time',

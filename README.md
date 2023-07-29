@@ -57,9 +57,21 @@ $ python test_gpu.py
 ````
 
 ## Errors
+As you can see I had to make 2 requirements files. 
+One for my intel MacBook Pro, and the other for my Metal MacBook Pro.
+Both have GPU (metal has 16 cores). Each needed a different configuration to connect to tensorflow
+GPU, because of the different architectures.
+
+Dockerizings did not make a different. The code still needed to connect 
+to a GPU which is not Nvidia and it couldn't. 
+I did manage to make it work eventually somehow, but the training 
+was aborted since tensorflow was crashing (a known problem, see below)
+
+
 Unfortunately, running this code on Mac Metal was not possible as I have got errors
 due to the lack of support of tensorflow and Apple Metal GPU.
 Even though I have 16 core GPU, the following message was not solvable.
+
 ``F tensorflow/core/lib/monitoring/sampler.cc:42] Check failed: bucket_limits_[i] > bucket_limits_[i - 1] (10 vs. 0)
 ``
 
