@@ -1054,15 +1054,15 @@ import sys
 import os
 model = get_model()
 
-# model.summary()
-# output_file = "/model_summary.txt"
-#
-# # Redirect the standard output to the file
-# with open(output_file, 'w') as f:
-#     sys.stdout = f  # Set the standard output to the file
-#     model.summary()  # Output will be written to the file instead of the console
-#     sys.stdout = sys.__stdout__  # Reset the standard output back to the console
-#
+model.summary()
+output_file = "model_summary.txt"
+
+# Redirect the standard output to the file
+with open(output_file, 'w') as f:
+    sys.stdout = f  # Set the standard output to the file
+    model.summary()  # Output will be written to the file instead of the console
+    sys.stdout = sys.__stdout__  # Reset the standard output back to the console
+
 
 
 if CFG.wandb:

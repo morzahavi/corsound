@@ -122,7 +122,7 @@ clip:
   value: false
 id:
   desc: null
-  value: k48n7ign
+  value: j67cni3w
 _wandb:
   desc: null
   value:
@@ -131,7 +131,7 @@ _wandb:
     framework: keras
     is_jupyter_run: false
     is_kaggle_kernel: false
-    start_time: 1690650599.245118
+    start_time: 1690651553.530526
     t:
       1:
       - 2
@@ -139,16 +139,7 @@ _wandb:
       - 5
       - 53
       - 55
-      2:
-      - 2
-      - 3
-      - 5
-      - 53
-      - 55
       3:
-      - 2
-      - 3
-      - 8
       - 13
       - 14
       - 16
