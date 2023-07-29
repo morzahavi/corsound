@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
 import argparse
+import tdqm
 # Graphics
 plt.rcParams["font.family"] = 'DejaVu Sans'
 sns.set_style("whitegrid", {'axes.grid': False})
