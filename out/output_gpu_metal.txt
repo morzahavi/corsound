@@ -1,0 +1,71 @@
+(cs) mz@Meytals-MacBook-Pro corsound % python test_gpu.py
+GPU is available and detected.
+2023-07-29 12:44:09.079544: I metal_plugin/src/device/metal_device.cc:1154] Metal device set to: Apple M1 Pro
+2023-07-29 12:44:09.079569: I metal_plugin/src/device/metal_device.cc:296] systemMemory: 16.00 GB
+2023-07-29 12:44:09.079572: I metal_plugin/src/device/metal_device.cc:313] maxCacheSize: 5.33 GB
+2023-07-29 12:44:09.079998: I tensorflow/core/common_runtime/pluggable_device/pluggable_device_factory.cc:303] Could not identify NUMA node of platform GPU ID 0, defaulting to 0. Your kernel may not have been built with NUMA support.
+2023-07-29 12:44:09.080255: I tensorflow/core/common_runtime/pluggable_device/pluggable_device_factory.cc:269] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 0 MB memory) -> physical PluggableDevice (device: 0, name: METAL, pci bus id: <undefined>)
+2023-07-29 12:44:09.196 Python[69537:5563812] -[MPSGraphCompilationDescriptor setOptimizationLevel:]: unrecognized selector sent to instance 0x6000019a4a80
+2023-07-29 12:44:09.233 Python[69537:5563812] *** Terminating app due to uncaught exception 'NSInvalidArgumentException', reason: '-[MPSGraphCompilationDescriptor setOptimizationLevel:]: unrecognized selector sent to instance 0x6000019a4a80'
+*** First throw call stack:
+(
+        0   CoreFoundation                      0x000000018b0781cc __exceptionPreprocess + 240
+        1   libobjc.A.dylib                     0x000000018adc97b8 objc_exception_throw + 60
+        2   CoreFoundation                      0x000000018b10b1a0 -[NSObject(NSObject) __retain_OA] + 0
+        3   CoreFoundation                      0x000000018afd8360 ___forwarding___ + 1728
+        4   CoreFoundation                      0x000000018afd7be0 _CF_forwarding_prep_0 + 96
+        5   libmetal_plugin.dylib               0x000000014fa9a578 ___ZN12metal_plugin11runMPSGraphEP11MetalStreamP8MPSGraphP12NSDictionaryS5__block_invoke + 112
+        6   libdispatch.dylib                   0x000000018ad6ebac _dispatch_client_callout + 20
+        7   libdispatch.dylib                   0x000000018ad7de00 _dispatch_lane_barrier_sync_invoke_and_complete + 56
+        8   libmetal_plugin.dylib               0x000000014fa9a4f4 _ZN12metal_plugin11runMPSGraphEP11MetalStreamP8MPSGraphP12NSDictionaryS5_ + 108
+        9   libmetal_plugin.dylib               0x000000014f8887f0 _ZN12metal_plugin20MPSLaunchBatchMatMulIfE6LaunchEPNS_15OpKernelContextERKNS_6TensorES6_bbbbRKNS_11MatMulBCastEPS4_RNS_13MPSGraphCacheERNS_27MatmulCachedGraphExecutableE + 1676
+        10  libmetal_plugin.dylib               0x000000014f88774c _ZN12metal_plugin20MPSBaseBatchMatMulOpIfLb0EE7ComputeEPNS_15OpKernelContextE + 3820
+        11  libmetal_plugin.dylib               0x000000014f8898f4 _ZN12metal_pluginL15ComputeOpKernelINS_16MPSBatchMatMulOpIfLb1EEEEEvPvP18TF_OpKernelContext + 44
+        12  libtensorflow_framework.2.dylib     0x000000010500eab8 _ZN10tensorflow15PluggableDevice7ComputeEPNS_8OpKernelEPNS_15OpKernelContextE + 148
+        13  libtensorflow_framework.2.dylib     0x0000000104f54834 _ZN10tensorflow12_GLOBAL__N_126SingleThreadedExecutorImpl3RunERKNS_8Executor4ArgsE + 1852
+        14  libtensorflow_framework.2.dylib     0x0000000104f1f58c _ZN10tensorflow26FunctionLibraryRuntimeImpl7RunSyncENS_22FunctionLibraryRuntime7OptionsEyN4absl12lts_202301254SpanIKNS_6TensorEEEPNSt3__16vectorIS6_NS9_9allocatorIS6_EEEE + 420
+        15  libtensorflow_framework.2.dylib     0x0000000104f28c30 _ZNK10tensorflow29ProcessFunctionLibraryRuntime18RunMultiDeviceSyncERKNS_22FunctionLibraryRuntime7OptionsEyPNSt3__16vectorINS5_7variantIJNS_6TensorENS_11TensorShapeEEEENS5_9allocatorISA_EEEENS5_8functionIFN4absl12lts_202301256StatusERKNS0_21ComponentFunctionDataEPNS0_12InternalArgsEEEE + 1320
+        16  libtensorflow_framework.2.dylib     0x0000000104f2dc6c _ZNK10tensorflow29ProcessFunctionLibraryRuntime7RunSyncERKNS_22FunctionLibraryRuntime7OptionsEyN4absl12lts_202301254SpanIKNS_6TensorEEEPNSt3__16vectorIS8_NSB_9allocatorIS8_EEEE + 868
+        17  libtensorflow_cc.2.dylib            0x00000002801ac76c _ZN10tensorflow19KernelAndDeviceFunc3RunEPNS_19ScopedStepContainerERKNS_15EagerKernelArgsEPNSt3__16vectorINS6_7variantIJNS_6TensorENS_11TensorShapeEEEENS6_9allocatorISB_EEEEPN3tsl19CancellationManagerERKNS6_8optionalINS_19EagerFunctionParamsEEERKNSJ_INS_17ManagedStackTraceEEEPNSG_24CoordinationServiceAgentE + 572
+        18  libtensorflow_cc.2.dylib            0x000000028015de84 _ZN10tensorflow18EagerKernelExecuteEPNS_12EagerContextERKN4absl12lts_2023012513InlinedVectorIPNS_12TensorHandleELm4ENSt3__19allocatorIS6_EEEERKNS7_8optionalINS_19EagerFunctionParamsEEERKN3tsl4core11RefCountPtrINS_15KernelAndDeviceEEEPNS_14GraphCollectorEPNSI_19CancellationManagerENS3_4SpanIS6_EERKNSD_INS_17ManagedStackTraceEEE + 452
+        19  libtensorflow_cc.2.dylib            0x0000000280167d78 _ZN10tensorflow11ExecuteNode3RunEv + 396
+        20  libtensorflow_cc.2.dylib            0x00000002801a7a38 _ZN10tensorflow13EagerExecutor11SyncExecuteEPNS_9EagerNodeE + 244
+        21  libtensorflow_cc.2.dylib            0x000000028015d874 _ZN10tensorflow12_GLOBAL__N_117EagerLocalExecuteEPNS_14EagerOperationEPPNS_12TensorHandleEPi + 1776
+        22  libtensorflow_cc.2.dylib            0x000000028015b874 _ZN10tensorflow14DoEagerExecuteEPNS_14EagerOperationEPPNS_12TensorHandleEPi + 420
+        23  libtensorflow_cc.2.dylib            0x000000028015b2b0 _ZN10tensorflow14EagerOperation7ExecuteEN4absl12lts_202301254SpanIPNS_20AbstractTensorHandleEEEPi + 132
+        24  libtensorflow_cc.2.dylib            0x00000002801a683c _ZN10tensorflow21CustomDeviceOpHandler7ExecuteEPNS_27ImmediateExecutionOperationEPPNS_30ImmediateExecutionTensorHandleEPi + 572
+        25  libtensorflow_cc.2.dylib            0x000000028681d340 TFE_Execute + 80
+        26  _pywrap_tensorflow_internal.so      0x00000001022bc8a0 _Z24TFE_Py_FastPathExecute_CP7_object + 12192
+        27  _pywrap_tfe.so                      0x0000000106440570 _ZZN8pybind1112cpp_function10initializeIZL25pybind11_init__pywrap_tfeRNS_7module_EE4$_61NS_6objectEJNS_4argsEEJNS_4nameENS_5scopeENS_7siblingEEEEvOT_PFT0_DpT1_EDpRKT2_ENUlRNS_6detail13function_callEE_8__invokeESN_ + 68
+        28  _pywrap_tfe.so                      0x000000010641bd34 _ZN8pybind1112cpp_function10dispatcherEP7_objectS2_S2_ + 3580
+        29  Python                              0x0000000100e72f08 cfunction_call + 60
+        30  Python                              0x0000000100e23a60 _PyObject_MakeTpCall + 132
+        31  Python                              0x0000000100f1bb3c call_function + 268
+        32  Python                              0x0000000100f15370 _PyEval_EvalFrameDefault + 23100
+        33  Python                              0x0000000100f0e934 _PyEval_EvalCode + 452
+        34  Python                              0x0000000100e2464c _PyFunction_Vectorcall + 344
+        35  Python                              0x0000000100f1bab0 call_function + 128
+        36  Python                              0x0000000100f13bd8 _PyEval_EvalFrameDefault + 17060
+        37  Python                              0x0000000100f0e934 _PyEval_EvalCode + 452
+        38  Python                              0x0000000100e2464c _PyFunction_Vectorcall + 344
+        39  Python                              0x0000000100f10290 _PyEval_EvalFrameDefault + 2396
+        40  Python                              0x0000000100f0e934 _PyEval_EvalCode + 452
+        41  Python                              0x0000000100e2464c _PyFunction_Vectorcall + 344
+        42  Python                              0x0000000100f10290 _PyEval_EvalFrameDefault + 2396
+        43  Python                              0x0000000100f0e934 _PyEval_EvalCode + 452
+        44  Python                              0x0000000100e2464c _PyFunction_Vectorcall + 344
+        45  Python                              0x0000000100f1bab0 call_function + 128
+        46  Python                              0x0000000100f15370 _PyEval_EvalFrameDefault + 23100
+        47  Python                              0x0000000100f0e934 _PyEval_EvalCode + 452
+        48  Python                              0x0000000100f66024 run_eval_code_obj + 136
+        49  Python                              0x0000000100f65f54 run_mod + 112
+        50  Python                              0x0000000100f63578 pyrun_file + 168
+        51  Python                              0x0000000100f62e98 pyrun_simple_file + 252
+        52  Python                              0x0000000100f62d5c PyRun_SimpleFileExFlags + 80
+        53  Python                              0x0000000100f8428c pymain_run_file + 320
+        54  Python                              0x0000000100f83a3c Py_RunMain + 988
+        55  Python                              0x0000000100f84ea0 Py_BytesMain + 40
+        56  dyld                                0x00000001009bd0f4 start + 520
+)
+libc++abi: terminating with uncaught exception of type NSException
+zsh: abort      python test_gpu.py
