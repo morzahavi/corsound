@@ -69,4 +69,4 @@ develop-eggs/
 *.tmp
 
 # Project-specific
-/checkpoints
+/my_project_specific_file_or_folder

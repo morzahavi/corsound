@@ -23,7 +23,32 @@ tf.get_logger().setLevel('ERROR')
 tf.autograph.set_verbosity(0)
 os.environ["WANDB_SILENT"] = "true"
 #
-BASE_PATH = "/Users/mz/"
+
+
+BASE_PATH = ""
+
+
+def main():
+    global BASE_PATH
+
+    # Create the argument parser
+    parser = argparse.ArgumentParser(description="Change to custom path")
+
+    # Add the --path argument
+    parser.add_argument('--path', help='Custom path', default=BASE_PATH)
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+    # If the --path argument is provided, use the custom path
+    if args.path:
+        BASE_PATH = args.path
+
+    # Your script logic goes here
+    # Use the BASE_PATH variable as needed in the rest of your script
+
+if __name__ == "__main__":
+    main()
 #####
 FOLDS = 10
 SEED = 101
