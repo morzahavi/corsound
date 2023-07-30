@@ -153,14 +153,14 @@ plt.subplot(121)
 plot_audio(audio)
 plt.title("Waveform", fontsize=17)
 plt.tight_layout()
-plt.savefig('wave_form_real')
+plt.savefig('images/wave_form_real')
 plt.close()
 
 plt.subplot(122)
 plot_spec(spec)
 plt.title("Spectrogram", fontsize=17)
 plt.tight_layout()
-plt.savefig('wave_spect_real')
+plt.savefig('images/wave_spect_real')
 plt.close()
 
 row = train_df[train_df.target == 1].iloc[10]
@@ -179,14 +179,14 @@ plt.subplot(121)
 plot_audio(audio)
 plt.title("Waveform", fontsize=17)
 plt.tight_layout()
-plt.savefig('wave_form_fake')
+plt.savefig('images/wave_form_fake')
 plt.close()
 
 plt.subplot(122)
 plot_spec(spec);
 plt.title("Spectrogram", fontsize=17)
 plt.tight_layout()
-plt.savefig('wave_spect_fake')
+plt.savefig('images/wave_spect_fake')
 plt.close()
 
 from sklearn.model_selection import StratifiedKFold
@@ -907,7 +907,7 @@ def plot_history(history):
     plt.text(x - 0.03 * xdist, y + 0.05 * ydist, "min loss", size=14)
     plt.ylabel("Loss", size=14)
     plt.legend(loc=3)
-    plt.savefig(f"history_plot.png")
+    plt.savefig(f"images/history_plot.png")
     return
 
 
@@ -923,7 +923,7 @@ def display_batch(batch, row=2, col=5):
         plt.title(text, fontsize=15, color=('red' if tar else 'green'))
         plt.tight_layout()
         plt.gcf()
-        plt.savefig(f'{str(idx)}.png')
+        plt.savefig(f'images/{str(idx)}.png')
         plt.close()
     plt.grid(False)
     plt.tight_layout()
