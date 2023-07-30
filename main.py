@@ -23,7 +23,7 @@ tf.get_logger().setLevel('ERROR')
 tf.autograph.set_verbosity(0)
 os.environ["WANDB_SILENT"] = "true"
 #
-BASE_PATH = "/Users/morzahavi/"
+BASE_PATH = "/Users/mz/"
 #####
 FOLDS = 10
 SEED = 101
