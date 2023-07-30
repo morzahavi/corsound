@@ -854,7 +854,7 @@ def plot_confusion_matrix(cm,
     plt.xlabel('Predicted label')
     plt.grid(False)
     plt.gcf()
-    plt.savefig('images/cm.png')
+    plt.savefig('images/cm_1.png')
     plt.close()
     return
 
@@ -1209,8 +1209,7 @@ valid_ds = get_dataset(
     drop_remainder=False,
 )
 
-print("1")
-exit()
+#4#
 
 # Train model
 history = model.fit(
@@ -1237,8 +1236,11 @@ if CFG.display_plot:
 
 
 # Load best weights
-K.clear_session()
+# K.clear_session()
 model.load_weights("checkpoints/ckpt.h5")
+
+print("1")
+exit()
 
 # Compute & save best Test result
 print("\n>> Valid Result:")
