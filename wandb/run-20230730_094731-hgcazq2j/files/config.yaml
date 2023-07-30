@@ -1,0 +1,158 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.13.3
+    framework: keras
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    python_version: 3.9.17
+    start_time: 1690699651.426229
+    t:
+      1:
+      - 2
+      - 3
+      - 5
+      - 53
+      - 55
+      2:
+      - 2
+      - 3
+      - 5
+      - 53
+      - 55
+      3:
+      - 3
+      - 8
+      - 13
+      - 14
+      - 16
+      - 23
+      4: 3.9.17
+      5: 0.13.3
+      8:
+      - 5
+audio_len:
+  desc: null
+  value: 56000
+augment:
+  desc: null
+  value: false
+batch_size:
+  desc: null
+  value: 32
+clip:
+  desc: null
+  value: false
+comment:
+  desc: null
+  value: Conformer-128x80-cosine-no_aug-no_fc
+cutmix_alpha:
+  desc: null
+  value: 2.5
+cutmix_prob:
+  desc: null
+  value: 0.0
+debug:
+  desc: null
+  value:
+  - true
+device:
+  desc: null
+  value: CPU
+display_plot:
+  desc: null
+  value: true
+drop_remainder:
+  desc: null
+  value: false
+duration:
+  desc: null
+  value: 3.5
+epochs:
+  desc: null
+  value: 12
+exp_name:
+  desc: null
+  value: v0
+fmax:
+  desc: null
+  value: 8000
+fmin:
+  desc: null
+  value: 20
+freq_mask:
+  desc: null
+  value: 10
+gn_prob:
+  desc: null
+  value: 0.0
+hop_len:
+  desc: null
+  value: 219
+id:
+  desc: null
+  value: hgcazq2j
+loss:
+  desc: null
+  value: binary_crossentropy
+lr:
+  desc: null
+  value: 0.0001
+lr_schedule:
+  desc: null
+  value: cosine
+mixup_alpha:
+  desc: null
+  value: 2.5
+mixup_prob:
+  desc: null
+  value: 0.0
+model_name:
+  desc: null
+  value: Conformer
+n_fft:
+  desc: null
+  value: 2048
+normalize:
+  desc: null
+  value: true
+optimizer:
+  desc: null
+  value: Adam
+project:
+  desc: null
+  value: fake-speech-detection
+sample_rate:
+  desc: null
+  value: 16000
+seed:
+  desc: null
+  value: 101
+spec_freq:
+  desc: null
+  value: 128
+spec_shape:
+  desc: null
+  value:
+  - 256
+  - 128
+spec_time:
+  desc: null
+  value: 256
+steps_per_execution:
+  desc: null
+  value: null
+time_mask:
+  desc: null
+  value: 20
+timeshift_prob:
+  desc: null
+  value: 0.0
+verbose:
+  desc: null
+  value: 0
+wandb:
+  desc: null
+  value: true

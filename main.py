@@ -16,7 +16,7 @@ import re
 plt.rcParams["font.family"] = 'DejaVu Sans'
 sns.set_style("whitegrid", {'axes.grid': False})
 # tf
-tf.config.run_functions_eagerly(True)
+# tf.config.run_functions_eagerly(True)
 # Show less log messages
 warnings.filterwarnings("ignore")
 tf.get_logger().setLevel('ERROR')
@@ -1080,7 +1080,7 @@ import os
 model = get_model()
 
 model.summary()
-output_file = "model_summary.txt"
+output_file = "out/model_summary.txt"
 
 # Redirect the standard output to the file
 with open(output_file, 'w') as f:
@@ -1209,6 +1209,9 @@ valid_ds = get_dataset(
     drop_remainder=False,
 )
 
+print("1")
+exit()
+
 # Train model
 history = model.fit(
     train_ds,
@@ -1224,6 +1227,7 @@ history = model.fit(
 history = pd.DataFrame(history.history)
 
 # Load best weights
+K.clear_session()
 model.load_weights("checkpoints/ckpt.h5")
 
 # Plot Training History
@@ -1233,6 +1237,7 @@ if CFG.display_plot:
 
 
 # Load best weights
+K.clear_session()
 model.load_weights("checkpoints/ckpt.h5")
 
 # Compute & save best Test result

@@ -67,7 +67,7 @@ to a GPU which is not Nvidia and it couldn't.
 I did manage to make it work eventually somehow, but the training 
 was aborted since tensorflow was crashing (a known problem, see below)
 
-
+### Errors in metal architecture 
 Unfortunately, running this code on Mac Metal was not possible as I have got errors
 due to the lack of support of tensorflow and Apple Metal GPU.
 Even though I have 16 core GPU, the following message was not solvable.
@@ -78,3 +78,11 @@ Even though I have 16 core GPU, the following message was not solvable.
 See documentation here:
 https://stackoverflow.com/questions/68105073/tensorflow-error-when-used-as-docker-baseimage
 https://github.com/tensorflow/tensorflow/issues/52845
+
+### Errors in intel architecture
+
+
+
+```azure
+AttributeError: 'NoneType' object has no attribute 'eager_mode'
+```
