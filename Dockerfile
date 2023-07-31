@@ -18,7 +18,6 @@ RUN apt install bazel-1.0.0
 RUN apt install default-jdk
 RUN apt install g++ unzip zip
 RUN apt-get install default-jdk
-
 # Install project dependencies
 RUN pip install -r /corsound/req.txt
 RUN pip install -U audio_classification_models

@@ -4,7 +4,7 @@ torchvision
 torchaudio
 tdqm
 
-###### Requirements without Version Specifiers ######
+
 numpy
 pandas
 tensorflow

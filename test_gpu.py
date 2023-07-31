@@ -11,3 +11,4 @@ if tf.config.list_physical_devices('GPU'):
         print(c)
 else:
     print("No GPU detected.")
+

@@ -247,8 +247,6 @@ TF_PATH = "/Users/morzahavi/"
 # Write TFRecord
 os.makedirs(f'{TF_PATH}tmp/asvspoof', exist_ok=True)
 
-
-##
 def write_tfrecord(df, split='train', show=True):
     df = df.copy()
     folds = sorted(df.fold.unique().tolist())

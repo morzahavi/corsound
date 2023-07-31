@@ -7,9 +7,6 @@ which is an x86_64 20.04 ubuntu based Linux distro, with Cuda toolkit.
 
 ## Prerequisites 
 Docker Desktop installed
-
-
-
 ## Installation
 
 Follow these steps after downloading the repo:

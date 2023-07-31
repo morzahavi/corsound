@@ -1031,7 +1031,7 @@ def get_lr_callback(mode='exp', batch_size=64, epochs=30, plot=False):
 lr_callback = get_lr_callback(mode=CFG.lr_schedule, epochs=30, plot=True)
 
 import audio_classification_models as acm
-
+# inf file
 URL = 'https://github.com/awsaf49/audio_classification_models/releases/download/v1.0.8/conformer-encoder.h5'
 
 from tensorflow.keras.models import Model

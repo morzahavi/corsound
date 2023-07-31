@@ -1,6 +1,5 @@
 # cs_functions.py
 # Define all the function needed
-
 # OS
 import os
 import shutil
