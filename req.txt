@@ -4,7 +4,6 @@ torchvision
 torchaudio
 opencv-python~=4.8.0.74
 
-###### Requirements without Version Specifiers ######
 numpy~=1.19.5
 pandas~=1.4.4
 tensorflow
