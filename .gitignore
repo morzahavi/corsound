@@ -70,3 +70,4 @@ develop-eggs/
 
 # Project-specific
 /my_project_specific_file_or_folder
+/tmp

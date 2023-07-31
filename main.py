@@ -25,7 +25,7 @@ os.environ["WANDB_SILENT"] = "true"
 #
 
 
-BASE_PATH = ""
+BASE_PATH = "/"
 
 
 def main():
@@ -1316,3 +1316,4 @@ plot_confusion_matrix(cm, ["Real", "Fake"], normalize=True)
 plt.tight_layout()
 plt.savefig('images/cm.png')
 plt.close()
+print("1")

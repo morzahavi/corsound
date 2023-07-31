@@ -1,0 +1,25 @@
+{
+    "os": "macOS-13.2.1-x86_64-i386-64bit",
+    "python": "3.9.17",
+    "heartbeatAt": "2023-07-30T15:50:40.918480",
+    "startedAt": "2023-07-30T15:50:39.683573",
+    "docker": null,
+    "cpu_count": 12,
+    "cuda": null,
+    "args": [
+        "--path",
+        "/Users/morzahavi/"
+    ],
+    "state": "running",
+    "program": "/Users/morzahavi/Library/Mobile Documents/com~apple~CloudDocs/projects/corsound/inf.py",
+    "codePath": "inf.py",
+    "git": {
+        "remote": "https://github.com/morzahavi/corsound.git",
+        "commit": "11bf3aecfa53da530a5a438371ced6217d14be15"
+    },
+    "email": "mor@zahavi.xyz",
+    "root": "/Users/morzahavi/Library/Mobile Documents/com~apple~CloudDocs/projects/corsound",
+    "host": "Mors-MBP.local",
+    "username": "morzahavi",
+    "executable": "/Users/morzahavi/cors/bin/python"
+}
