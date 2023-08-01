@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+########################################################################
+# Model A
+########################################################################
 import tensorflow as tf
 import pandas as pd
 import numpy as np
@@ -22,34 +26,30 @@ warnings.filterwarnings("ignore")
 tf.get_logger().setLevel('ERROR')
 tf.autograph.set_verbosity(0)
 os.environ["WANDB_SILENT"] = "true"
-#
-
-
-BASE_PATH = "/"
-
-
-def main():
+########################################################################
+# Meta Data
+# * `speaker_id` :        LA_****, a 4-digit speaker ID
+# * `filename` :  LA_****, name of the audio file
+# * `system_id` :         ID of the speech spoofing system `(A01 - A19)`,  or, for **real** speech SYSTEM-ID is left blank ('-')
+# * `class_name` :        **bonafide** for genuine speech, or, **spoof** for fake/spoof speech
+# * `target` : `1` for **fake/spoof**  and `0` for **real/genuine**
+########################################################################
+BASE_PATH = "/Users/morzahavi/"
+def main(): # A function that allows for custom BASE_PATH
     global BASE_PATH
-
     # Create the argument parser
     parser = argparse.ArgumentParser(description="Change to custom path")
-
     # Add the --path argument
     parser.add_argument('--path', help='Custom path', default=BASE_PATH)
-
     # Parse the command-line arguments
     args = parser.parse_args()
-
     # If the --path argument is provided, use the custom path
     if args.path:
         BASE_PATH = args.path
-
-    # Your script logic goes here
-    # Use the BASE_PATH variable as needed in the rest of your script
-
 if __name__ == "__main__":
     main()
 #####
+# Configs
 FOLDS = 10
 SEED = 101
 DEBUG = True
@@ -73,7 +73,7 @@ train_df.drop(columns=['null'], inplace=True)
 train_df['filepath'] = f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_train/flac/' + train_df.filename + '.flac'
 train_df['target'] = (train_df.class_name == 'spoof').astype('int32')  # set labels 1 for fake and 0 for real
 if DEBUG:
-    train_df = train_df.groupby(['target']).sample(2500).reset_index(drop=True)
+    train_df = train_df.groupby(['target']).sample(500).reset_index(drop=True)
 print(f'Train Samples: {len(train_df)}')
 train_df.head(2)
 #
@@ -84,7 +84,7 @@ valid_df.drop(columns=['null'], inplace=True)
 valid_df['filepath'] = f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_dev/flac/' + valid_df.filename + '.flac'
 valid_df['target'] = (valid_df.class_name == 'spoof').astype('int32')
 if DEBUG:
-    valid_df = valid_df.groupby(['target']).sample(2000).reset_index(drop=True)
+    valid_df = valid_df.groupby(['target']).sample(200).reset_index(drop=True)
 print(f'Valid Samples: {len(valid_df)}')
 valid_df.head(2)
 #
@@ -95,11 +95,9 @@ test_df.drop(columns=['null'], inplace=True)
 test_df['filepath'] = f'{BASE_PATH}asvspoof/LA/ASVspoof2019_LA_eval/flac/' + test_df.filename + '.flac'
 test_df['target'] = (test_df.class_name == 'spoof').astype('int32')
 if DEBUG:
-    test_df = test_df.groupby(['target']).sample(2000).reset_index(drop=True)
+    test_df = test_df.groupby(['target']).sample(200).reset_index(drop=True)
 print(f'Test Samples: {len(test_df)}')
-test_df.head(2)
-
-
+# Utils
 def load_audio(path, sr=16000):
     """load audio from .wav file
     Args:
@@ -110,23 +108,15 @@ def load_audio(path, sr=16000):
     """
     audio, sr = librosa.load(path, sr=sr)
     return audio, sr
-
-
 def plot_audio(audio, sr=16000):
     fig = librosa.display.waveshow(audio,
                                    x_axis='time',
                                    sr=sr)
     return fig
-
-
-# def listen_audio(audio, sr=16000):
-#     display(ipd.Audio(audio, rate=sr))
-
 def get_spec(audio):
     spec = librosa.feature.melspectrogram(audio, fmax=FMAX, n_mels=N_MELS, hop_length=HOP_LEN, n_fft=N_FFT)
     spec = librosa.power_to_db(spec)
     return spec
-
 def plot_spec(spec, sr=16000):
     fig = librosa.display.specshow(spec,
                                    x_axis='time',
@@ -135,62 +125,49 @@ def plot_spec(spec, sr=16000):
                                    sr=SAMPLE_RATE,
                                    fmax=FMAX, )
     return fig
-
-
+# Visualise
+## Real
 row = train_df[train_df.target == 0].iloc[10]
 print(f'> Filename: {row.filename} | Label: {row.class_name}')
 audio, sr = load_audio(row.filepath, sr=None)
 audio = audio[:AUDIO_LEN]
 spec = get_spec(audio)
-
-# print('# Listen')
-# listen_audio(audio, sr=16000)
-
 print("# Plot\n")
 plt.figure(figsize=(12 * 2, 5))
-
 plt.subplot(121)
 plot_audio(audio)
 plt.title("Waveform", fontsize=17)
 plt.tight_layout()
 plt.savefig('images/wave_form_real')
 plt.close()
-
 plt.subplot(122)
 plot_spec(spec)
 plt.title("Spectrogram", fontsize=17)
 plt.tight_layout()
 plt.savefig('images/wave_spect_real')
 plt.close()
-
+## Fake
 row = train_df[train_df.target == 1].iloc[10]
 print(f'Filename: {row.filename} | Label: {row.class_name}')
 audio, sr = load_audio(row.filepath, sr=None)
 audio = audio[:AUDIO_LEN]
 spec = get_spec(audio)
-
-# print('# Listen')
-# listen_audio(audio, sr=16000)
-
 print("# Plot\n")
 plt.figure(figsize=(12 * 2, 5))
-
 plt.subplot(121)
 plot_audio(audio)
 plt.title("Waveform", fontsize=17)
 plt.tight_layout()
 plt.savefig('images/wave_form_fake')
 plt.close()
-
 plt.subplot(122)
 plot_spec(spec);
 plt.title("Spectrogram", fontsize=17)
 plt.tight_layout()
 plt.savefig('images/wave_spect_fake')
 plt.close()
-
+# Split Data
 from sklearn.model_selection import StratifiedKFold
-
 skf = StratifiedKFold(n_splits=FOLDS, shuffle=True, random_state=SEED)
 
 # Split train data into folds
@@ -206,26 +183,18 @@ for fold, (_, val_idx) in enumerate(skf.split(test_df, y=test_df['target'])):
     test_df.loc[val_idx, 'fold'] = fold
 
 train_df.fold.value_counts()
-
-
 ## TFRecord Data
 def _bytes_feature(value):
     """Returns a bytes_list from a string / byte."""
     if isinstance(value, type(tf.constant(0))):
         value = value.numpy()  # BytesList won't unpack a string from an EagerTensor.
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
-
-
 def _float_feature(value):
     """Returns a float_list from a float / double."""
     return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
-
-
 def _int64_feature(value):
     """Returns an int64_list from a bool / enum / int / uint."""
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
-
-
 def train_serialize_example(feature0, feature1, feature2,
                             feature3, feature4, feature5, feature6):
     feature = {
@@ -240,13 +209,9 @@ def train_serialize_example(feature0, feature1, feature2,
     example_proto = tf.train.Example(features=tf.train.Features(feature=feature))
     return example_proto.SerializeToString()
 
-
-
-TF_PATH = "/Users/morzahavi/"
-
+TF_PATH = BASE_PATH
 # Write TFRecord
 os.makedirs(f'{TF_PATH}tmp/asvspoof', exist_ok=True)
-
 def write_tfrecord(df, split='train', show=True):
     df = df.copy()
     folds = sorted(df.fold.unique().tolist())
@@ -281,25 +246,17 @@ def write_tfrecord(df, split='train', show=True):
                 filename = filepath.split('/')[-1]
                 filesize = os.path.getsize(filepath) / 10 ** 6
                 print(filename, ':', np.around(filesize, 2), 'MB')
-
-
 ## Write tf records if directory tmp does not exist
-def is_directory_empty(directory_path):
-    return not os.listdir(directory_path)
-
-
-def tf_records_condition():
+# def is_directory_empty(directory_path):
+#     return not os.listdir(directory_path)
+# def tf_records_condition():
     write_tfrecord(train_df, split='train', show=True)
     write_tfrecord(valid_df, split='valid', show=True)
     write_tfrecord(test_df, split='test', show=True)
-
-# print("1")
-# exit()
-directory_path = f'{TF_PATH}tmp/asvspoof'
-if is_directory_empty(directory_path):
-    tf_records_condition()
-
-
+# directory_path = f'{TF_PATH}tmp/asvspoof'
+# if is_directory_empty(directory_path):
+#     tf_records_condition()
+# Red TFRecord
 def decode_audio(data, audio_len, target_len=1 * 16000):
     audio, sr = tf.audio.decode_wav(data)
     audio = tf.reshape(audio, [audio_len])  # explicit size needed for TPU
@@ -311,8 +268,6 @@ def decode_audio(data, audio_len, target_len=1 * 16000):
     # normalization
     audio = (audio - min_) / (max_ - min_)  # mean=0 & std=1
     return audio
-
-
 def read_labeled_tfrecord(example):
     LABELED_TFREC_FORMAT = {
         "audio": tf.io.FixedLenFeature([], tf.string),  # tf.string means bytestring
@@ -324,8 +279,6 @@ def read_labeled_tfrecord(example):
     audio = decode_audio(example['audio'], audio_len)
     target = example['target']
     return audio, target  # returns a dataset of (image, label) pairs
-
-
 def load_dataset(fileids, labeled=True, ordered=False):
     # Read from TFRecords. For optimal performance, reading from multiple files at once and
     # disregarding data order. Order does not matter since we will be shuffling the data anyway.
@@ -341,8 +294,6 @@ def load_dataset(fileids, labeled=True, ordered=False):
     dataset = dataset.map(read_labeled_tfrecord)
     # returns a dataset of (image, label) pairs if labeled=True or (image, id) pairs if labeled=False
     return dataset
-
-
 def get_dataset(FILENAMES):
     dataset = load_dataset(FILENAMES, labeled=True)
     #     dataset = dataset.repeat() # the training dataset must repeat for several epochs
@@ -350,14 +301,11 @@ def get_dataset(FILENAMES):
     dataset = dataset.batch(BATCH_SIZE)
     dataset = dataset.prefetch(AUTO)  # prefetch next batch while training (autotune prefetch buffer size)
     return dataset
-
-
 def count_data_items(fileids):
     # the number of data items is written in the id of the .tfrec files, i.e. flowers00-230.tfrec = 230 data items
     n = [int(re.compile(r"-([0-9]*)\.").search(fileid).group(1)) for fileid in fileids]
     return np.sum(n)
-
-
+# Visualisation function
 def display_batch(batch, row=2, col=5):
     audios, targets = batch
     plt.figure(figsize=(col * 5, 5 * row))
@@ -372,8 +320,7 @@ def display_batch(batch, row=2, col=5):
     plt.tight_layout()
     plt.savefig(f'/images/{str(batch)}.png')
     plt.close()
-
-
+# Check TFRecord
 BATCH_SIZE = 32
 AUTO = tf.data.experimental.AUTOTUNE
 TRAIN_FILENAMES = tf.io.gfile.glob(f'{TF_PATH}tmp/asvspoof/train*.tfrec')
@@ -382,28 +329,22 @@ TEST_FILENAMES = tf.io.gfile.glob(f'{TF_PATH}tmp/asvspoof/test*.tfrec')
 print('There are %i train, %i valid & %i test images' % (count_data_items(TRAIN_FILENAMES),
                                                          count_data_items(VALID_FILENAMES),
                                                          count_data_items(TEST_FILENAMES)))
-
-###### Model ########################################################################
+########################################################################
+# Model B
+########################################################################
 import pandas as pd
 import numpy as np
 import random
 import os
-
 import matplotlib.pyplot as plt
-
-
-
 import tensorflow as tf, re
 import tensorflow.keras.backend as K
 import tensorflow_io as tfio
 import tensorflow_addons as tfa
 import tensorflow_probability as tfp
-
 from tqdm.notebook import tqdm
 from sklearn.metrics import confusion_matrix
-
 import itertools
-
 # Show less log messages
 tf.get_logger().setLevel('ERROR')
 tf.autograph.set_verbosity(0)
@@ -1011,27 +952,6 @@ lr_callback = get_lr_callback(mode=CFG.lr_schedule, epochs=30, plot=True)
 import audio_classification_models as acm
 
 URL = 'https://github.com/awsaf49/audio_classification_models/releases/download/v1.0.8/conformer-encoder.h5'
-
-from tensorflow.keras.models import Model
-
-# Create your Keras model here
-# For example:
-# model = Model(...)
-
-# def load_pretrain_local(model, local_path):
-#     "Load weights from the local file into the model"
-#     if not os.path.isfile(local_path):
-#         raise FileNotFoundError(f"The file '{local_path}' does not exist.")
-#     model.load_weights(local_path, by_name=True, skip_mismatch=True)
-
-# from tensorflow.keras.models import Model
-#
-# # Create your Keras model here
-# # For example:
-# # model = Model(...)
-#
-# local_path = os.path.expanduser("~/icloud/projects/corsound/conformer-encoder.h5")
-
 
 def Conformer(input_shape=(128, 80, 1), num_classes=1, final_activation='sigmoid', pretrain=True):
     """Souce Code: https://github.com/awsaf49/audio_classification_models"""
